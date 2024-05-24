@@ -129,7 +129,7 @@ def SendLastSeen(accountId,comPort,isActive,imei, balance):
             return
     
 
-def ModemStartup(accountId,comPort,isActive,imei, balance, server, simType, simPin ):
+def ModemStartup(accountId,comPort,isActive,imsi,imei,  balance, server, simType, simPin ):
 
     # only called on port_scan uopn startup
     
@@ -160,6 +160,7 @@ def ModemStartup(accountId,comPort,isActive,imei, balance, server, simType, simP
             "comPort": comPort,
             "balance": "0",
             "isActive": isActive,
+            "imsi": imsi,
             "imei": imei,
             "simType": simTypeId,
             "server": server,

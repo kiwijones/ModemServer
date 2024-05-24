@@ -32,12 +32,13 @@ def taskPorts(comPort,que,logger, settings):
 
     #return
     # result = logger.writelog("looking for Serial",f"{comPort}")
-    msg = jsonMessage('D',f"looking for Serial: {comPort}")  # send the queue to rabbit
+    msg = jsonMessage('D',f"looking for Serial (IMEI): {comPort}")  # send the queue to rabbit
     #sendRabbit(msg.replace('\n',''),"D")
 
 
-    
+    # get the modem serial number
     serialResponse = get_modem_response(ser,'at+CGSN','init','WAITFOR')  # serial
+
     #serialResponse = get_modem_response(ser,'at&f','init','WAITFOR')  # serial
 
     print('>'*50)
@@ -52,7 +53,12 @@ def taskPorts(comPort,que,logger, settings):
     try:
         if serialResponse.isdigit():
 
+            
+            # next step
+
             # result = logger.writelog("looking for IMSI",f"{serialResponse}")
+
+
             msg = jsonMessage('D',f"looking for IMSI: {serialResponse}") # send the queue to rabbit
             #sendRabbit(msg.replace('\n',''),"D")
 
@@ -90,7 +96,7 @@ def taskPorts(comPort,que,logger, settings):
                 
                 try:
                     # this will update insert the modem details on the server
-                    ModemStartup(settings['AccountId'],comPort,1,ismiResponse, 0,settings['Server'],simType,simPin)
+                    ModemStartup(settings['AccountId'],comPort,1,serialResponse, ismiResponse, 0,settings['Server'],simType,simPin)
                 except Exception as ex:
                     print("SendLastSeen: " + ex)
                 
@@ -117,7 +123,7 @@ def taskPorts(comPort,que,logger, settings):
     except Exception as ex:
         print(ex)
         print("Modem not on port")
-        SendLastSeen(settings['AccountId'],comPort,0,"Not Found")
+        #SendLastSeen(settings['AccountId'],comPort,0,"Not Found")
 
 
 
