@@ -1,0 +1,5 @@
+'Balance', (0, 4)
+'Ports', (512, 4)
+'Simulate', (1024, 4)
+'Paused', (1536, 4)
+'SinglePort', (2048, 10)
