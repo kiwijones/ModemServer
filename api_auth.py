@@ -79,6 +79,55 @@ def getauthtoken():
 
     return azure_Auth_Load["access_token"]
 
+def ModemBalance(accountId,comPort,isActive,imei, balance):
+    
+    authtoken = getauthtoken()
+
+
+    print(authtoken)
+
+    try:
+    
+
+        with open('C:/System/Data/settings.pck', 'rb') as file:
+            # Unpickle the data
+            data = pickle.load(file)
+
+            host = data['host']
+
+        url = host + "/Remote/Update_AccountModemBalance"
+
+        print(url)
+        #print(authtoken)
+
+        payload = json.dumps({
+        "accountId": accountId,
+        "comPort": comPort,
+        "balance": balance.replace("'",""),
+        "isActive": isActive,
+        "imei": imei
+
+        })
+
+        
+        headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + authtoken
+        }
+
+        response = requests.request("POST", url, headers=headers, data=payload)
+
+        print(response.status_code)
+
+        print(payload)
+
+        return
+
+    except Exception as ex:
+            
+            print(ex)
+            return
+
 def SendLastSeen(accountId,comPort,isActive,imei, balance):
     
     authtoken = getauthtoken()
@@ -103,7 +152,7 @@ def SendLastSeen(accountId,comPort,isActive,imei, balance):
         payload = json.dumps({
         "accountId": accountId,
         "comPort": comPort,
-        "balance": balance,
+        "balance": balance.replace("'",""),
         "isActive": isActive,
         "imei": imei
 

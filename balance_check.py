@@ -18,7 +18,7 @@ import datetime
 from class_objects import Logging_File
 import shelve
 import pickle
-from api_auth import SendLastSeen
+from api_auth import ModemBalance
 
 
 def run_balance(port):
@@ -98,7 +98,7 @@ def get_single_port(port):
 
 def set_RemoteBalance(settings,comPort,ismiResponse, balance):
      
-     SendLastSeen(settings['AccountId'],comPort,1,ismiResponse, balance)
+     ModemBalance(settings['AccountId'],comPort,1,ismiResponse, balance)
 
 def set_balance(deviceId, balance,logger, server):
 
@@ -244,22 +244,23 @@ class BC():
                 print(self.modem["balanceAt"])
 
             #port[2] is the sim pin
-                response = str(get_balance(ser,self.logger,self.settings,f'"*{self.modem["balanceAt"]}*{str(self.modem["simPin"])}#",15','cusd','Votre',False,'1',self.port[1])).split()
+                response = get_balance(ser,self.logger,self.settings,f'"*{self.modem["balanceAt"]}*{str(self.modem["simPin"])}#",15','cusd','Votre',False,'1',self.port[1])
                 
 
 
+                balance_message =  str(response.message2).split(" ")
 
 
+                #response1 = self.logger.writelog("get_balance",f"{self.port[1]} {response}")
 
-                response1 = self.logger.writelog("get_balance",f"{self.port[1]} {response}")
-
-                msg = jsonMessage('C',f"{response1}")  # send the queue to rabbit
+                #msg = jsonMessage('C',f"{response1}")  # send the queue to rabbit
 
                 #sendRabbit(msg,"D")
 
                 try:
                     
-                    if response[0].isdigit() or response[0] == "-1" or response[0] == "-2":
+                    #if response[0].isdigit() or response[0] == "-1" or response[0] == "-2":
+                    if  response.errorCode == -1 or response.errorCode == -2:
                             # print("AAAAAAAA")
                             print('Error:', response[0], self.port[0])
                             
@@ -282,9 +283,9 @@ class BC():
                         # print("BBBBBBBB")
                         try:
                            # 28,867444030261376,COM44,800000,22/02/2023 08:13:43,5,NADIA,True
-                            if response[5].isdigit(): # if a -1 is received then its a possible slow response from the
+                            if balance_message[4].isdigit(): # if a -1 is received then its a possible slow response from the
                                 
-                                lastDate = set_RemoteBalance(self.settings, self.port,self.imei,response[5])
+                                lastDate = set_RemoteBalance(self.settings, self.port,self.imei,balance_message[4])
 
                                 #lastDate = set_balance(self.port[0],response[5],self.logger, self.server)  
 

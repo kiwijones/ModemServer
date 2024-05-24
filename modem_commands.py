@@ -212,7 +212,7 @@ def read_from(serialPort, *args):
 def read_from_logger(serialPort, logger,settings, *args):
 
 
-    print("read_from_logger(serialPort, logger,settings, *args):")
+    print("*** read_from_logger ***")
 
 
     #rabbitTransaction(f"args {args}",2)
@@ -284,13 +284,14 @@ def read_from_logger(serialPort, logger,settings, *args):
 
                 if len(strResponse) > 0:
                     
-                    cmdFilter = ["RSSI","HCSQ","OK"]
+                    cmdFilter = ["RSSI","HCSQ","OK","'OK'"]
 
                     
                     #result = logger.writelog("Modem_commands",f"Modem Response: {args[5]} --> {strResponse}")
 
                     writeLog = True  
                     for i in cmdFilter:
+                        print(i)
                         if strResponse.rfind(i) > 0:
                             writeLog = False
                             print(i)
@@ -340,8 +341,11 @@ def read_from_logger(serialPort, logger,settings, *args):
                             #     sendRabbit(msg,"D")
                             # #           Transfert a l'agent 213558077860 a ete effectue avec succes. Montant STORMCREDIT 200000 Dinar. Numero de l'operation: 240018987348.
                             #     return "Transfert a l'agent 21350000000 a ete effectue avec succes. Montant STORMCREDIT 500000 Dinar. Numero de l'operation: 260012874760."
-                    except Exception as ex:
-                        print('strResponse.index(minimum) > -1:' + ex)
+                    except Exception as ex:  
+                        # a valueError will be thrown here if the value is not found
+                        # we will do nothing
+                        pass
+                        #print('strResponse.index(minimum) > -1:' + ex)
 
                     # print('string index',strResponse.index('HCSQ'))
                     # print('$'*30)
@@ -355,7 +359,8 @@ def read_from_logger(serialPort, logger,settings, *args):
                             return "0," + strResponse.replace("'","")
                        
                     except Exception as ex:
-                        print('strResponse.index(args_2) > 0 : ' + ex)
+                        pass
+                        #print('strResponse.index(args_2) > 0 : ' + ex)
 
                     
                     try:
@@ -364,7 +369,8 @@ def read_from_logger(serialPort, logger,settings, *args):
                             return "-3," + strResponse
                         pass     
                     except Exception as ex:
-                        print('strResponse.find("destinataire") > 0: ' + ex)
+                        pass
+                        #print('strResponse.find("destinataire") > 0: ' + ex)
 
 
                     try:
@@ -373,7 +379,8 @@ def read_from_logger(serialPort, logger,settings, *args):
                             return "-3," + strResponse
                         pass     
                     except Exception as ex:
-                        print('if strResponse.find("incorrect") > 0: ' + ex)
+                        pass
+                        #print('if strResponse.find("incorrect") > 0: ' + ex)
 
                 
 
@@ -386,7 +393,8 @@ def read_from_logger(serialPort, logger,settings, *args):
                                 return strResponse
 
                     except Exception as ex:
-                        print('if args[2] == "WAITFOR": ' + ex)
+                        pass
+                        #print('if args[2] == "WAITFOR": ' + ex)
 
                     
 

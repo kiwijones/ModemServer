@@ -6,18 +6,18 @@ from process_transactions import *
 from serial_port import scanModems,port_check
 from comm_functions import ThreadRabbitReceive
 from modem_commands import get_modem_response
-from port_scan import ScanThePorts
+#from port_scan import ScanThePorts
 from os.path import exists
 import json
-from class_objects import Setting_File
+#from class_objects import Setting_File
 import shelve
 from tkinter import *
 import subprocess
 import pickle
 
-root = Tk()
-root.title("text gui")
-root.geometry("400x400")
+# root = Tk()
+# root.title("text gui")
+# root.geometry("400x400")
 
 def run():
     subprocess.call(["Modems",'main.py'])
@@ -58,7 +58,6 @@ if __name__=='__main__':
     #         pickle.dump(data["server"],data_file)
     # except:
     #     pass
-        
 
     try:
 
@@ -89,7 +88,6 @@ if __name__=='__main__':
             pickle.dump(settings,file)
     except Exception as ex:
         print(ex)
-    
     
     shelve_one = 'C:/System/Data/shelve_one.shlv'
 
