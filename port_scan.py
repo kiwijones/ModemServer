@@ -17,7 +17,6 @@ import serial.tools.list_ports
 import array as portArray
 
 
-
 def taskPorts(comPort,que,logger, settings):
 
     print(f"started {comPort}")

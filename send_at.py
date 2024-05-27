@@ -29,7 +29,6 @@ def ussd_cmd(ser,cmd,mode):
 
     print(cmd)
 
-
     ser.reset_input_buffer()
 
     at_bytes = b'at+cusd=' 
@@ -46,8 +45,6 @@ def ussd_cmd(ser,cmd,mode):
     # wait for the modem to respond
     while True:
        
-       
-        
         if(ser.in_waiting):  
             data_from_modem = read_buffer(ser) # reat the data
 

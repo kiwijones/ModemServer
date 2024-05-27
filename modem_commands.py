@@ -15,6 +15,8 @@ from serial_port import port_check
 from comm_functions import jsonMessage
 import pickle
 from class_objects import TransactionResponse
+from api_auth import Update_Retry_RequestId
+
 
 def get_modem_response( ser, *args,**kwargs):    
 
@@ -90,7 +92,7 @@ def read_from(serialPort, *args):
 
     slow_port_response = 0   #a timer is on the port response it is's consistanty slow Ii will exit out
 
-
+    print("Retry: " +  args[4])
     while True:
 
         # if keyboard.is_pressed('q'):
@@ -213,7 +215,7 @@ def read_from_logger(serialPort, logger,settings, *args):
 
 
     print("*** read_from_logger ***")
-
+    print(settings)
 
     #rabbitTransaction(f"args {args}",2)
     # print('Read from')
@@ -227,6 +229,9 @@ def read_from_logger(serialPort, logger,settings, *args):
 
     args_2 = args[2]
 
+    print('Retry: ' + str(args[3]))
+    print('RequestId: ' + str(args[5]))
+
     # print(args_2,end='\n')
 
     noData_Count = 0
@@ -239,7 +244,8 @@ def read_from_logger(serialPort, logger,settings, *args):
 
     try:
         with open("C:/System/Data/nocount_timeout.pck","rb") as data_file:
-            print("found pickle")
+
+            print("found pickle timeout: " + str(noData_TimeOut))
 
             noData_TimeOut = pickle.load(data_file)
             try:
@@ -279,8 +285,30 @@ def read_from_logger(serialPort, logger,settings, *args):
 
 
             try:
-                print('--- Try ---')
+                print('--- Try --- ' + str(noData_Count))
                 noData_Count += 1
+                
+                # try:
+                #     Update_Retry_RequestId(settings,args[5],args[3])    
+                # except Exception as ex:
+                #     print(ex)
+                
+                if int(noData_Count) > int(noData_TimeOut):
+
+                    # if thr transaction retry counter is greater that pickle timeout
+                    # then the retry count will be inicremented 
+                    # this retry value I may move into the settings .json
+                    # retry is in the flexyTransactions table
+
+                    try:
+                        print(f'*** Update_Retry_RequestId {noData_Count} ***')
+
+                        Update_Retry_RequestId(settings,args[5],args[3])    
+                    except Exception as ex:
+                        print(ex)
+                    
+                    return "-1 No Response"
+
 
                 if len(strResponse) > 0:
                     
@@ -372,7 +400,6 @@ def read_from_logger(serialPort, logger,settings, *args):
                         pass
                         #print('strResponse.find("destinataire") > 0: ' + ex)
 
-
                     try:
 
                         if strResponse.find("incorrect") > 0:
@@ -419,10 +446,7 @@ def read_from_logger(serialPort, logger,settings, *args):
 
                 time.sleep(.1)  
 
-                if noData_Count > noData_TimeOut:
-                    
-                    return "-1 No Response"
-
+               
                            
             except Exception as ex:
                 print(ex)
@@ -506,12 +530,12 @@ def modem_at(port_to_send_to, *args):
     # x.start()
     
 # @timer_decorator
-def modem_cusd_Logger(port_to_send_to, logger, settings, *args):
+def modem_cusd_Logger(port_to_send_to, logger, settings, *args):  # *args here are the kwargs passed in
 
     
-    print("modem_cusd_Logger(port_to_send_to, logger, settings, *args)")
-    print('----- modem_cusd -----', port_to_send_to)
-    print('----- modem_cusd -----', args)
+    #print("modem_cusd_Logger(port_to_send_to, logger, settings, *args)")
+    print('----- modem_cusd_Logger -----', port_to_send_to)
+    print('----- modem_cusd_Logger -----', args)
 
     for i in args:
         print(i)
@@ -521,7 +545,7 @@ def modem_cusd_Logger(port_to_send_to, logger, settings, *args):
 
     # print("*"*50)
 
-    args = args[0]  # new args is the first tuple
+    args = args[0]  # new args is the first tuple 
 
     print(args) 
 

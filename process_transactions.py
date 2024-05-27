@@ -188,7 +188,6 @@ def process_transaction(*args, logger,settings):
 
     print("process_transaction".center(50,"*"))
 
-
     response = ""
     response_fail = []
     args = args[0]
@@ -258,6 +257,7 @@ def process_transaction(*args, logger,settings):
     try:
 
         print(args['amount'])
+        print(args['retry'])
 
     except Exception as ex:
         print(ex)
@@ -271,6 +271,8 @@ def process_transaction(*args, logger,settings):
     phoneNo = args['phoneNumber']
     requestId = args['requestId']
     simPin = args['requestId']
+    retry = args['retry']
+
 
     print(args['productId'])
 
@@ -343,7 +345,9 @@ def process_transaction(*args, logger,settings):
                 
                 
                 #0,ro 0560195955, tapez 1 pour confirmer. Ou tapez 2 pour annuler",68    
-                transactionResult = run_Transaction(ser,logger,settings, f'"*{transactionAt}*{phoneNo}*{service_amount}*{simPin}#",15','cusd','confirmer',0,1,0)
+                # kwargs will be passed in right through to the read_cusd_logger
+
+                transactionResult = run_Transaction(ser,logger,settings, f'"*{transactionAt}*{phoneNo}*{service_amount}*{simPin}#",15','cusd','confirmer',retry,1,requestId)
 
                 #transactionResult = '0,ro 0560195955, tapez 1 pour confirmer. Ou tapez 2 pour annuler",68'.split(',')
 
@@ -692,7 +696,6 @@ class Process_Failure:
                 message = str(message).replace(tr,"") 
 
 
-
             print(message)
 
         except Exception as ex:
@@ -921,8 +924,7 @@ class NewTransactions():
         # print(data)
 
         # parts = data.decode("utf-8").split(',')
- 
-       
+        
 
         # Parse JSON string into Python object
         python_Api_Data = json.loads(dataFromApi.decode('utf-8'))
@@ -933,10 +935,13 @@ class NewTransactions():
             phoneNo = dataRow['phoneNumber']
             amount = dataRow['amount']
             requestId = dataRow['requestId']
+            retry = dataRow['retry']
 
             print(phoneNo)
             print(amount)
             print(requestId)
+            print(requestId)
+            print(retry)
 
             #return
             try:

@@ -41,7 +41,6 @@ def get_active_ports():
         f"where [ZoneId] > 0 and [server] = '{server}' " # and rtrim([ComPort]) = 'COM38'"
 
 
-
     print(query)
 
     msg = jsonMessage('C',f"{query}")  # send the queue to rabbit

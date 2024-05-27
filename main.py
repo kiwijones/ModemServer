@@ -6,7 +6,7 @@ from process_transactions import *
 from serial_port import scanModems,port_check
 from comm_functions import ThreadRabbitReceive
 from modem_commands import get_modem_response
-#from port_scan import ScanThePorts
+from port_scan import ScanThePorts
 from os.path import exists
 import json
 #from class_objects import Setting_File
@@ -123,13 +123,11 @@ if __name__=='__main__':
     # settings['Ports'] = True
     # settings.close()
 
-
+    ScanThePorts(settings)
 
     while True:
 
         running_shelve = shelve.open(shelve_one, flag='w')  # open the shelf get the paused param
-
-
 
         print(running_shelve.__dict__)
 

@@ -284,14 +284,19 @@ def Update_Retry_RequestId(settings,requestId, value):
 
     host = settings['host']
    
-    url = host + "/Remote/Update_Retry_RequestId?requestId=" + requestId + "&value=" + value
+    try:
+        url = host + "/Remote/Update_Retry_RequestId?requestId=" + str(requestId) + "&value=" + str(value)
+   
+    except Exception as ex:
+        print(ex)
+    
 
     payload = {}
     headers = {
     'Authorization': 'Bearer ' + authtoken
     }
 
-    response = requests.request("GET", url, headers=headers, data=payload)
+    response = requests.request("POST", url, headers=headers, data=payload)
 
     print(response.text)
     return(response.text)
