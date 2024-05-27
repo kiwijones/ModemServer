@@ -125,6 +125,8 @@ if __name__=='__main__':
 
     ScanThePorts(settings)
 
+    
+    
     while True:
 
         running_shelve = shelve.open(shelve_one, flag='w')  # open the shelf get the paused param

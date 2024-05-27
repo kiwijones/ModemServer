@@ -92,7 +92,12 @@ def read_from(serialPort, *args):
 
     slow_port_response = 0   #a timer is on the port response it is's consistanty slow Ii will exit out
 
-    print("Retry: " +  args[4])
+    try:
+        print("Retry: " +  args[4])
+        retry = args[4]
+    except Exception as ex:
+        retry = 0
+
     while True:
 
         # if keyboard.is_pressed('q'):
@@ -402,14 +407,30 @@ def read_from_logger(serialPort, logger,settings, *args):
 
                     try:
 
+                        if strResponse.find("Code Pin") > 0:
+                            return "-4," + strResponse
+                        pass     
+                    except Exception as ex:
+                        pass
+
+                    try:
+
                         if strResponse.find("incorrect") > 0:
                             return "-3," + strResponse
                         pass     
                     except Exception as ex:
                         pass
-                        #print('if strResponse.find("incorrect") > 0: ' + ex)
 
-                
+
+                    try:
+
+                        if strResponse.find("bloqu") > 0:
+                            return "-5," + strResponse
+                        pass     
+                    except Exception as ex:
+                        pass
+
+                        #print('if strResponse.find("incorrect") > 0: ' + ex)
 
                     # print(str(args[2]))
                     try:
@@ -605,11 +626,18 @@ def modem_cusd_Logger(port_to_send_to, logger, settings, *args):  # *args here a
         except:
             message3 = ""
 
+        try:
+            message4 = readSplitter[4]
+
+        except:
+            message4 = ""
 
         trResponse = TransactionResponse(error,
                                          message1=message1,
                                          message2=message2,
-                                         message3=message3)
+                                         message3=message3,
+                                         message4=message4
+                                         )
         return trResponse
     
     except Exception as ex:

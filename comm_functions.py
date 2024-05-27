@@ -267,6 +267,7 @@ def sendmail(recipent, subject, body):
         print(ex)
 
 def is_integer(n):
+    
     '''Takes in a number or number string, returns true if it's an int'''
     try:
         float(n)
@@ -274,6 +275,28 @@ def is_integer(n):
         return False
     else:
         return float(n).is_integer()
+
+
+
+def string_remove_chars(string):
+
+    ''' when called this will remove these charactors ["(",")",",","'","\""] from the string being passed in'''
+
+    textToReplace = ["(",")",",","'","\""]
+
+    try:
+            #newMessage = str(message)
+            for tr in textToReplace:
+                string = str(string).replace(tr,"") 
+
+
+            print(string)
+
+    except Exception as ex:
+            print(ex)
+
+    return string
+
 
 if __name__ == "__main__":
 

@@ -26,8 +26,6 @@ class Logging_File:
             fileToWrite.close
 
 
-
-
         # self.logpath + "\\StormModems_" + datetime.today().strftime('%Y-%m-%d') + ".log"
 
         # if os.path.isfile(self.logfile):
@@ -120,15 +118,15 @@ class Live_File:
                 outfile.write(json_object)
 
 class TransactionResponse:
-    def __init__(self,errorCode, message1, message2,message3):
+    def __init__(self,errorCode, message1, message2,message3,message4):
         self.errorCode = errorCode
         self.message1 = message1,
         self.message2 = message2,
         self.message3 = message3,
+        self.message4 = message4
 
     def returnResponse(self):
         return(self)
-
 
 if __name__ == "__main__":
 

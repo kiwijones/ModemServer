@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from database import mssql_engine
 from serial_port import initSerial
 #from comm_functions import sendRabbit,jsonMessage,rabbitTransaction,is_integer
-from comm_functions import jsonMessage,rabbitTransaction,is_integer
+from comm_functions import jsonMessage,rabbitTransaction,is_integer, string_remove_chars
 from modem_commands import modem_cusd,modem_cusd_Logger
 from decorators import timer_decorator,logger,Sendmail_Decorator,Sendmail_Decorator_2
 
@@ -85,38 +85,6 @@ def any_new_transactions(logger, settings):
 
 
     api_auth.AnyTransactions_ForAccount(settings)
-
-    # # query = "set nocount on select fr.[RequestId],fr.[PhoneNumber],fr.[Amount],fr.[ZoneId],rtrim([ComPort]) as ComPort,ft.SessionId,convert(int,pa.CreditBalance) as CreditBalance,pa.AccountName,pa.AccountCode,ft.TransactionID,ft.retry,pd.DeviceId " +\
-    # #     "from [dbo].[tbl_GATEWAY_FlexyRequests] fr " +\
-    # #         "join [dbo].[tbl_PLATFORM_Devices] pd on fr.[ZoneId] = pd.ZoneId " + \
-    # #             "join [dbo].tbl_GATEWAY_FlexyTransactions ft on fr.RequestID = ft.RequestId " + \
-    # #                 "join [Bluechip].dbo.tbl_PLATFORM_Sessions ps on ft.SessionId = ps.SessionID "  +\
-    # #                     "join [Bluechip].dbo.tbl_PLATFORM_Accounts pa on ps.AccountID = pa.AccountID " +\
-    # #                         "where fr.[Status] = 0 and ft.retry > -1 "
-
-    # query = '''
-    # set nocount on select fr.[RequestId],fr.[PhoneNumber],fr.[Amount],fr.[ZoneId],rtrim([ComPort]) as ComPort,
-    # ft.SessionId,convert(int,pa.CreditBalance) as CreditBalance,pa.AccountName,pa.AccountCode,ft.TransactionID,ft.retry,pd.DeviceId,
-    # convert(int,pd.[Balance])
-    # from [dbo].[tbl_GATEWAY_FlexyRequests] fr
-    # join [dbo].[tbl_PLATFORM_Devices] pd on fr.[ZoneId] = pd.ZoneId
-    # join [dbo].tbl_GATEWAY_FlexyTransactions ft on fr.RequestID = ft.RequestId
-    # join [Bluechip].dbo.tbl_PLATFORM_Sessions ps on ft.SessionId = ps.SessionID
-    # join [Bluechip].dbo.tbl_PLATFORM_Accounts pa on ps.AccountID = pa.AccountID
-    # where fr.[Status] = 0 and ft.retry > -1 and fr.[Amount] <= convert(int,pd.[Balance])
-    # order by fr.[RequestId] desc
-    # '''
-
-    # # print(query)        
-    # engine = mssql_engine()  # imported from database.py
-    # conn = engine.raw_connection()
-    # cur_known = conn.cursor()
-    # result = cur_known.execute(query).fetchall()   
-    # cur_known.close
-    # del cur_known
-    # return result
-
-
 
 # @timer_decorator
 def enoughCredit(comport, amount, zoneid):
@@ -197,7 +165,7 @@ def process_transaction(*args, logger,settings):
     #print(type(args))
 
     service_amount = args["amount"]  # RESET THIS BACK TO 0 SERVICE AMOUNT WILL BE SET FROM THE MODEM BALANCE
-    service_pin = '0000'
+    simPin = '0000'
    
     # try:
     #     python_Api_Data = json.dumps(args[0])   
@@ -270,7 +238,6 @@ def process_transaction(*args, logger,settings):
     productId = args['productId']
     phoneNo = args['phoneNumber']
     requestId = args['requestId']
-    simPin = args['requestId']
     retry = args['retry']
 
 
@@ -294,7 +261,7 @@ def process_transaction(*args, logger,settings):
             modems = pickle.load(file)
 
             print(modems)
-            
+            port_found = False
             # Iterate over the unpickled data and get the comport for the product supplied
             for item in modems:   
 
@@ -306,14 +273,24 @@ def process_transaction(*args, logger,settings):
                     try:
                         portResponse = api_auth.Get_ComportForProduct( settings,productId,args['amount'])
 
+                        
+
                         for port in json.loads(portResponse):
                                 comPort = str(port["ComPort"])
                                 currentBalance = port["Balance"]
-
-                        print(comPort)
+                                simPin = port["simPin"]
+                                print(comPort)
+                                
+                                # if we have a port with enough balance then break out
+                                if(int(currentBalance) >= int(args['amount'])):
+                                    port_found = True
 
                     except Exception as ex:
-                        print(ex)        
+                        print(ex) 
+
+
+                if port_found:
+                    break;       
                    
         try:
 
@@ -333,12 +310,11 @@ def process_transaction(*args, logger,settings):
             # add add transaction here
             # build the cusd string
 
-
             ser = initSerial(comPort, 19200)
 
             print(ser)
 
-            phoneNo = "10560195955"
+            #phoneNo = "10560195955"
             #service_amount = "100"
         
             try:
@@ -374,14 +350,27 @@ def process_transaction(*args, logger,settings):
                     print('is_integer:' + ex)
                     
                 try:
-                    
+                    # at this point the netwoek operator want the transaction comfirmed
                     if 'confirmer.' in str(transactionResult.message2):
 
                         print('do conformation')
                         
-                        #confirmResult = str(run_Transaction(ser,logger,settings, '"1",15','cusd','succes',0,1,0))
+                        confirmResult = run_Transaction(ser,logger,settings, f'"1",15','cusd','succes',retry,1,requestId)
+                        
+                        # at this point we can finalize the transaction
+                        # transaction error -1 is a fail
 
-                        pass
+                        
+
+                        print(type(confirmResult))
+
+                        print(str(confirmResult.errorCode))
+                        print(str(confirmResult.message1))
+                        print(str(confirmResult.message2))
+                        print(str(confirmResult.message3))
+                        print(str(confirmResult.message4))
+
+                        return(confirmResult)
 
 
                 except Exception as ex:
@@ -687,19 +676,22 @@ class Process_Failure:
        
         print(message)
         
+
+        message = string_remove_chars(message)
+
         # strip out some junk we don't need
-        textToReplace = ["(",")",",","'"]
+        # textToReplace = ["(",")",",","'"]
 
-        try:
-            #newMessage = str(message)
-            for tr in textToReplace:
-                message = str(message).replace(tr,"") 
+        # try:
+        #     #newMessage = str(message)
+        #     for tr in textToReplace:
+        #         message = str(message).replace(tr,"") 
 
 
-            print(message)
+        #     print(message)
 
-        except Exception as ex:
-            print(ex)
+        # except Exception as ex:
+        #     print(ex)
       
         try:
             with open('C:/System/Data/settings.pck', 'rb') as file:
@@ -726,7 +718,6 @@ class Process_Failure:
 
         except Exception as ex:
             print('Remote/Process_Failure: ' + ex)
-
        
         return
   
@@ -940,24 +931,33 @@ class NewTransactions():
             print(phoneNo)
             print(amount)
             print(requestId)
-            print(requestId)
+           
             print(retry)
 
             #return
+
+
+
             try:
 
                 transaction_result =  process_transaction(dataRow,logger=self.logger,settings=settings)
 
-                
+                print('--- transaction done ---')
+
                 if(int(transaction_result.errorCode) < 0):
                     print("failed")
+
+                    retry
+
+
+                    fail_message =  string_remove_chars(str(transaction_result.message1)  + str(transaction_result.message2)  + str(transaction_result.message3) + str(transaction_result.message4))
                     
                     fail = Process_Failure(requestId,0,settings,"rollback")
 
 
                     fail.incRetry()    
 
-                    fail.update_Transaction_qry_failed(transaction_result.message1,logger)
+                    fail.update_Transaction_qry_failed(fail_message,logger)
 
                     print(transaction_result.errorCode)
 
@@ -969,9 +969,6 @@ class NewTransactions():
                 if(int(transaction_result.errorCode) >= 0):
                     print("success")
                     success = Process_Success(requestid=requestId)
-
-
-
 
             except Exception as ex:
                 
