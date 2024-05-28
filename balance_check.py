@@ -136,7 +136,6 @@ def set_balance(deviceId, balance,logger, server):
 
 def get_balance( ser, logger,settings, *args,**kwargs):    
 
-
     response = ''
     
     # ser=port_check(self.port, 19200)
@@ -196,7 +195,6 @@ class BC():
 
             strPort = []
 
-
             try:
                  portResponse = GetComportForIMEI(self.imei,self.settings)
 
@@ -204,29 +202,22 @@ class BC():
 
                     self.simPin = port["simpin"]
                     print(self.simPin)
-
-                
-                 
+ 
             except Exception as ex:
                  print('SimPin: ' + ex)
                  
             
-            if(self.simPin == "0000"):
-                print('Simpin is invalid')
+            if(len(self.simPin) == ""):
+                print('SimPin is invalid')
                 return
 
             ser = initSerial(self.port,19200)
             
-            
-    	    
             print(ser.isOpen())
            
             current_time = datetime.datetime.now().strftime("%H:%M:%S")
 
             if(ser.isOpen()):
-
-
-                
 
 
                 print(self.modem["balanceAt"])
@@ -299,6 +290,7 @@ class BC():
                 print("serial port closed")
                 strPort.append(str(self.port[0]) + ',Closed,'+ str(self.port[1]) + ',-1,' +  str(current_time) + ',Closed,0,0')
             # '28,867444030261376,COM41,90000,09/03/2023 12:36:57,5,COD NADIA,True'
+
             #msg = jsonMessage('BA',' '.join(map(str,sorted(strPort))))  # send the queue to rabbit
             #sendRabbit(msg,"D")  # D here is dashboard
             return strPort
