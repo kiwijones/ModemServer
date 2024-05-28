@@ -122,20 +122,21 @@ def hasAccountCredit(sessionId, amount):
 def run_Transaction( ser,logger, settings, *args,**kwargs):   
 
 
-    print("run_Transaction", args) 
+    #print("run_Transaction", args) 
 
 
-    for key, value in kwargs.items():
-        print(f"{key} = {value}")
+    # for key, value in kwargs.items():
+    #     print(f"{key} = {value}")
 
 
     try:
          
 
-        print(args[4])
+        #print(args[4])
 
+        # to simulate a conformation args[4]) == 2
 
-        if(int(args[4]) == 2):
+        if(int(args[4]) == 3):
 
 
             trResponse = TransactionResponse(0,
@@ -149,8 +150,7 @@ def run_Transaction( ser,logger, settings, *args,**kwargs):
 
     except Exception as ex:
         return
-
-   
+ 
 
     with open("C:/System/Data/nocount_timeout.pck","wb") as data_file:
         pickle.dump(300,data_file)  # modem timeout
@@ -158,7 +158,7 @@ def run_Transaction( ser,logger, settings, *args,**kwargs):
 
     if args[1] == 'cusd':
         
-        print('modem_cusd_Logger')
+        #print('modem_cusd_Logger')
 
         trResponse = modem_cusd_Logger(ser, logger, settings,args ,kwargs)
 
@@ -166,7 +166,7 @@ def run_Transaction( ser,logger, settings, *args,**kwargs):
         #trResponse = TransactionResponse(response[0],response[1])
 
 
-        print("run_balance", trResponse) 
+        #print("run_balance", trResponse) 
 
         try:
             os.remove("C:/System/Data/nocount_timeout.pck")
@@ -178,84 +178,71 @@ def run_Transaction( ser,logger, settings, *args,**kwargs):
     #     pass
     pass
 
-# @timer_decorator
+@timer_decorator
 def process_transaction(*args, logger,settings):
 
+    '''
+
+process_transaction
+called with 
+{'requestId': 6124, 'phoneNumber': '0560195955', 'amount': 10000, 'zoneId': 0, 'comPort': None, 'sessionId': 4138548, 'creditBalance': 2700, 'accoun
+tName': 'NOM DE VENDEUR', 'accountCode': 'AA0123', 'transactionID': 5676, 'retry': 0, 'deviceId': 0, 'balance': 0, 'productId': 24, 'productName': '
+Storm'}
+
+Loops the modems in the .json file loooking for a productId match
+
+once found sets:
+comPort = str(port["ComPort"])
+currentBalance = port["Balance"]
+simPin = port["simPin"]
+accountdeviceId = port["AccountdeviceId"]
+
+does a modem balance check, although the modem won't be presented without creditBalance
+
+does a run_transaction: *599*0560195955*10000*3960#
+
+if error code < 0 then exit out
+also exitout if the simpin isn't set, wrong simpin will block the modem
+
+if confirmer is returned
+
+run_transaction: "1" to confirmer
+
+successful response:
+Transfert a l'agent 213560195955 a ete effectue avec succes. Montant STORMCREDIT 10000 Dinar. Numero de l'operation"
+
+returns TransactionResponse 
+
+
+'''
     print("process_transaction".center(50,"*"))
 
     response = ""
     response_fail = []
     args = args[0]
 
-    print(args)
+    #print(args)
 
     #print(type(args))
 
     service_amount = args["amount"]  # RESET THIS BACK TO 0 SERVICE AMOUNT WILL BE SET FROM THE MODEM BALANCE
-    simPin = '0000'
+    simPin = ''
    
-    # try:
-    #     python_Api_Data = json.dumps(args[0])   
-
-
-
-    #     print(python_Api_Data)
-
-    # except Exception as ex:
-    #                 print(ex)
-    
-    #print(python_Api_Data)
-    # try:
-
-    #     # service_amount = int(enoughCredit(comport=args[4],amount=args[2],zoneid=args[3]))
-
-    #     credit_response = enoughCredit(comport=args[4],amount=args[2],zoneid=args[3])
-        
-    #     account_Credit = hasAccountCredit(sessionId=45443, amount=args[2])
-
-
-    #     print(credit_response)
-
-    #     print(type(credit_response))
-    #     # for i in credit_response:
-    #     #     print(i)
-
-    #     service_amount = credit_response[0][0]   # balance before
-    #     service_pin = credit_response[0][1]
-
-    #     # print(service_amount)
-    #     # print(service_pin)
-    #     rabbitTransaction(f"Available credit {service_amount}",1)
-    #     result = logger.writelog("Process_transaction 19",f"Available credit {service_amount}")
-    #     msg = jsonMessage("C",f"{result}")
-    #     #sendRabbit(msg,"D")
-        
-    # except Exception as ex:
-    #     print(ex)
-    #     print(f"No service balance found for {args[4]} : {service_amount}")
-    #     rabbitTransaction(f"No service balance found for {args[4]}",0)
-    #     service_amount = -1
-
-
-
-
-    #if service_amount > 0:  # Modem has credit... keep going
-
-    print(type(service_amount))
+    #print(type(service_amount))
 
         # print(service_amount)
    
         # print("we have an amount")
         
-    print(int(service_amount))
+    #print(int(service_amount))
 
-    try:
+    # try:
 
-        print(args['amount'])
-        print(args['retry'])
+    #     print(args['amount'])
+    #     print(args['retry'])
 
-    except Exception as ex:
-        print(ex)
+    # except Exception as ex:
+    #     print(ex)
 
 
         #return
@@ -268,7 +255,7 @@ def process_transaction(*args, logger,settings):
     retry = args['retry']
 
 
-    print(args['productId'])
+    #print(args['productId'])
 
 
     #todo map modems 
@@ -287,30 +274,33 @@ def process_transaction(*args, logger,settings):
             # Unpickle the data
             modems = pickle.load(file)
 
-            print(modems)
+            #print(modems)
             port_found = False
             # Iterate over the unpickled data and get the comport for the product supplied
             for item in modems:   
 
-                print(item['product'])
+                #print(item['productId'])
 
                 # if get a match with the product then get the working comport & current balance 
-                if(item['product'] == str(productId)):
+                if(item['productId'] == str(productId)):
 
                     try:
                         portResponse = api_auth.Get_ComportForProduct( settings,productId,args['amount'])
-
                         
-
+                        simpin = ""
                         for port in json.loads(portResponse):
                                 comPort = str(port["ComPort"])
                                 currentBalance = port["Balance"]
                                 simPin = port["simPin"]
                                 accountdeviceId = port["AccountdeviceId"]
-                                print(comPort)
+                                #imsi = port["IMSI"]
+                                transactionAt = port["transactionAt"]
+                                balanceAt = port["balanceAt"]
+                                print(str(comPort) + " " + str(simPin))
                                 
                                 # if we have a port with enough balance then break out
                                 if(int(currentBalance) >= int(args['amount'])):
+
                                     port_found = True
 
                     except Exception as ex:
@@ -322,22 +312,20 @@ def process_transaction(*args, logger,settings):
                    
         try:
 
-            print("==================================================================================")
+            #print("==================================================================================")
            
             if(int(currentBalance) < int(args['amount'])):
                 print("not enough credit")
                 return
 
-
-
-            if(simPin == "0000"):
-                print("Sim Pin incorrect: 0000")
+            if( len(simPin) == 0):
+                print("Sim Pin incorrect: 0")
                 return
 
             print('=== Found ===')
             
-            balanceAt=item['balanceAt']
-            transactionAt= item['transactionAt']
+            # balanceAt=item['balanceAt']
+            # transactionAt= item['transactionAt']
 
             # create new serial port
             # add add transaction here
@@ -345,7 +333,7 @@ def process_transaction(*args, logger,settings):
 
             ser = initSerial(comPort, 19200)
 
-            print(ser)
+            #print(ser)
 
             #phoneNo = "10560195955"
             #service_amount = "100"
@@ -390,43 +378,20 @@ def process_transaction(*args, logger,settings):
                         
 
 
-
-
-
-
                         # kwards 2 here is a flag to indicate that a conformation is being done
                         confirmResult = run_Transaction(ser,logger,settings, f'"1",15','cusd','succes',retry,2,requestId)
                         
-                        # at this point we can finalize the transaction
-                        # transaction error -1 is a fail
-
-                        # Transfert a l'agent 213560195955 a ete effectue avec succes. Montant STORMCREDIT 10000 Dinar. Numero de l'operation
-                        
-
-                        # try:
-                        #     if is_integer(confirmResult.errorCode):
-                        #         if int(confirmResult.errorCode) < 0:
-                            
-                        #             return(confirmResult)
-                            
-                        # except Exception as ex:
-                        #     print('is_integer:' + ex)
-
-
-
-                        # print(type(confirmResult))
-
                         # return the modems current credit to add to the transaction 
                         try:
                             confirmResult.message4 = str(comPort) + "," + str(currentBalance) + "," + str(accountdeviceId)
                         except Exception as ex:
                             pass
                         
-                        print(str(confirmResult.errorCode))
-                        print(str(confirmResult.message1))
-                        print(str(confirmResult.message2))
-                        print(str(confirmResult.message3))
-                        print(str(confirmResult.message4))
+                        # print(str(confirmResult.errorCode))
+                        # print(str(confirmResult.message1))
+                        # print(str(confirmResult.message2))
+                        # print(str(confirmResult.message3))
+                        # print(str(confirmResult.message4))
 
                         return(confirmResult)
 
@@ -651,24 +616,7 @@ def process_transaction(*args, logger,settings):
             try:
 
                 api_auth.Update_Retry(settings,args[0])
-                # query_pre_success = f'''
-
-                # set nocount on 
-                # update [dbo].tbl_GATEWAY_FlexyTransactions 
-                # set retry = -1,
-                # FlexyResponseMessage = 'cusd: transaction réseau réussie'
-                # where requestId = {args[0]}
-
-                # '''
-                # print(query_pre_success)  
-
-                # engine_pre_success = mssql_engine()
-                # conn_pre_success = engine_pre_success.raw_connection()
-                # cur_known = conn_pre_success.cursor()
-                # cur_known.execute(query_pre_success)
-                # cur_known.close()
-                # del cur_known
-
+              
             except Exception as ex:
                 print(ex)
                 #rabbitTransaction(f"pre_successs {ex}",0)
@@ -805,7 +753,7 @@ class Process_Success():
 
         print("update_Transaction_qry_success".center(50,"*"))
 
-        api_auth.Update_Process_Success(
+        Update_Process_Success_Response = api_auth.Update_Process_Success(
             settings=self.settings,
             bBefore=bBefore,
             bAfter=bAfter,
@@ -815,6 +763,8 @@ class Process_Success():
             requestId=self.requestid
 
             )
+
+        print(Update_Process_Success_Response)
 
 
         return

@@ -123,9 +123,7 @@ if __name__=='__main__':
     # settings['Ports'] = True
     # settings.close()
 
-    ScanThePorts(settings)
-
-    
+    ScanThePorts(settings,0)
     
     while True:
 
@@ -138,7 +136,6 @@ if __name__=='__main__':
             print(running_shelve['Balance'])
             if processCounter % 5 == 0:
                 running_shelve['Balance'] = True
-
              
             if running_shelve['Balance']:
                 print("Run_Balance")

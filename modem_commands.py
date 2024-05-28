@@ -54,7 +54,7 @@ def get_modem_response( ser, *args,**kwargs):
 
 def read_until(ser, terminator='\n'):
 
-    print(f"reading {ser.name}...")
+    #print(f"reading {ser.name}...")
 
     resp = ''
 
@@ -73,7 +73,7 @@ def read_until(ser, terminator='\n'):
 # @timer_decorator
 def read_from(serialPort, *args):
 
-    print("read_from".center(30,"*"))
+    #print("read_from".center(30,"*"))
 
     #rabbitTransaction(f"args {args}",2)
     # print('Read from')
@@ -81,7 +81,7 @@ def read_from(serialPort, *args):
     # print('='*100)
 
     args = args[0]
-    print("read_from",args)
+    #print("read_from",args)
 
 
     args_2 = args[2]
@@ -93,7 +93,7 @@ def read_from(serialPort, *args):
     slow_port_response = 0   #a timer is on the port response it is's consistanty slow Ii will exit out
 
     try:
-        print("Retry: " +  args[4])
+        #print("Retry: " +  args[4])
         retry = args[4]
     except Exception as ex:
         retry = 0
@@ -219,8 +219,8 @@ def read_from(serialPort, *args):
 def read_from_logger(serialPort, logger,settings, *args):
 
 
-    print("*** read_from_logger ***")
-    print(settings)
+    #print("*** read_from_logger ***")
+    #print(settings)
 
     #rabbitTransaction(f"args {args}",2)
     # print('Read from')
@@ -234,8 +234,8 @@ def read_from_logger(serialPort, logger,settings, *args):
 
     args_2 = args[2]
 
-    print('Retry: ' + str(args[3]))
-    print('RequestId: ' + str(args[5]))
+    #print('Retry: ' + str(args[3]))
+    #print('RequestId: ' + str(args[5]))
 
     # print(args_2,end='\n')
 
@@ -250,7 +250,7 @@ def read_from_logger(serialPort, logger,settings, *args):
     try:
         with open("C:/System/Data/nocount_timeout.pck","rb") as data_file:
 
-            print("found pickle timeout: " + str(noData_TimeOut))
+            #print("found pickle timeout: " + str(noData_TimeOut))
 
             noData_TimeOut = pickle.load(data_file)
             try:
@@ -262,7 +262,7 @@ def read_from_logger(serialPort, logger,settings, *args):
         print("No pickle", ex)
         noData_TimeOut = 75
 
-    print("noData_TimeOut",noData_TimeOut)
+    #print("noData_TimeOut",noData_TimeOut)
 
     while True:
 
@@ -270,11 +270,11 @@ def read_from_logger(serialPort, logger,settings, *args):
 
 
             time.sleep(1.3)
-            print("-"*100)
+            #print("-"*100)
             start = time.time()
-            print('*',noData_Count )
+            #print('*',noData_Count )
             strResponse = str.strip(read_until(serialPort))  # read from the serial port
-            print("strResponse", strResponse)
+            #print("strResponse", strResponse)
 
 
             #print(args)
@@ -290,7 +290,7 @@ def read_from_logger(serialPort, logger,settings, *args):
 
 
             try:
-                print('--- Try --- ' + str(noData_Count))
+                print(str(noData_Count))
                 noData_Count += 1
                 
                 # try:
@@ -409,6 +409,15 @@ def read_from_logger(serialPort, logger,settings, *args):
 
                         if strResponse.find("Code Pin") > 0:
                             return "-4," + strResponse
+                        pass     
+                    except Exception as ex:
+                        pass
+
+                    try:
+
+                        if strResponse.find("conforme") > 0:
+                            print("The given MSISDN is not compliant.")
+                            return "-5," + strResponse
                         pass     
                     except Exception as ex:
                         pass
@@ -555,20 +564,20 @@ def modem_cusd_Logger(port_to_send_to, logger, settings, *args):  # *args here a
 
     
     #print("modem_cusd_Logger(port_to_send_to, logger, settings, *args)")
-    print('----- modem_cusd_Logger -----', port_to_send_to)
-    print('----- modem_cusd_Logger -----', args)
+    #print('----- modem_cusd_Logger -----', port_to_send_to)
+    #print('----- modem_cusd_Logger -----', args)
 
-    for i in args:
-        print(i)
+    # for i in args:
+    #     print(i)
 
-    print(args[0])  # args passed in is a tuple within a tuble (('"*570*0000#",15', 'cusd', 'Votre', '1'),)
+    #print(args[0])  # args passed in is a tuple within a tuble (('"*570*0000#",15', 'cusd', 'Votre', '1'),)
 
 
     # print("*"*50)
 
     args = args[0]  # new args is the first tuple 
 
-    print(args) 
+    #print(args) 
 
     # print('USSDMode', args[3])
     
@@ -581,7 +590,7 @@ def modem_cusd_Logger(port_to_send_to, logger, settings, *args):  # *args here a
 
     at_string = args[0] + '\r'
 
-    print("AT:",at_string)
+    #print("AT:",at_string)
 
 
     atCommand = at_bytes + at_string.encode('utf-8')

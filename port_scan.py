@@ -17,7 +17,7 @@ import serial.tools.list_ports
 import array as portArray
 
 
-def taskPorts(comPort,que,logger, settings):
+def taskPorts(comPort,que,logger, settings, report):
 
     print(f"started {comPort}")
 
@@ -25,8 +25,6 @@ def taskPorts(comPort,que,logger, settings):
 
     print('\033[39m')
     # print('\039[39m' + ser)
-
-
 
 
     #return
@@ -46,13 +44,18 @@ def taskPorts(comPort,que,logger, settings):
 
     print('\033[39m')
 
-    #print('>'*50)
-
-    #return
     try:
         if serialResponse.isdigit():
 
-            
+            try:
+                if(int(report) > 0):
+                    print(" Found Modem ".center(50,"*"))
+                    print((str(comPort) + " " + str(serialResponse)).center(50," "))
+                    print("".center(50,"*"))
+                    return
+
+            except Exception as ex:
+                pass
             # next step
 
             # result = logger.writelog("looking for IMSI",f"{serialResponse}")
@@ -87,7 +90,7 @@ def taskPorts(comPort,que,logger, settings):
                 simType = -1
                 simPin = "0000"
                 for modem in modemFile:
-                    if modem["IMSI"] == ismiResponse:
+                     if modem["IMSI"] == ismiResponse:
                         simType = modem["type"]
                         simPin = modem["simPin"]
 
@@ -100,7 +103,6 @@ def taskPorts(comPort,que,logger, settings):
                     print("SendLastSeen: " + ex)
                 
                 print('\033[39m' + "")
-
                 
             else:
 
@@ -135,14 +137,14 @@ def list_serial_ports():
     #     print(f"HWID: {hwid}\n")
 
 
-def ThreadPorts(settings):
+def ThreadPorts(settings, report):
 
     threads = []  # thread list
     que = []  #que list, this object is passed into the threaded task where it gets appended to
 
 
     # first loop through all ports on the server
-
+    print("Report: " + str(report))
     logger = Logging_File()
 
 
@@ -169,25 +171,23 @@ def ThreadPorts(settings):
                 if "Secondary" in portSplit[1]:
                     print(portSplit[0])
                     print(portSplit[1])
-                    taskPorts(portSplit[0],que,logger,settings)
+                    taskPorts(portSplit[0],que,logger,settings, report)
 
 
     except Exception as ex:
         print(ex)
 
-def ScanThePorts(settings):
+def ScanThePorts(settings,reports):
 
     #settings['Ports'] = False
 
-    ThreadPorts(settings)
-
+    ThreadPorts(settings, reports)
 
 def ScanThePorts1():
 
     
 
     ThreadPorts()
-
 
 
 if __name__ == "__main__":
@@ -197,7 +197,6 @@ if __name__ == "__main__":
 
     # running_shelve = shelve.open(shelve_one, flag='w')  
 
-
     try:
          
         with open('C:/System/Data/settings.pck', 'rb') as file:
@@ -205,44 +204,14 @@ if __name__ == "__main__":
             settings = pickle.load(file)
 
             #client_secret = data['client_secret']
+            # the 0 here is modem reporting, is set to 1 the script will report modem com and IMSI but not 
+            # update database
 
-
-
-            ScanThePorts(settings)
-
-
+            ScanThePorts(settings,0)
 
     except Exception as ex:
             print('cannot open settings file')
             print(ex)
 
 
-    # ScanThePorts(running_shelve)
-
-    # running_shelve.close()
-    
-    # settings = shelve.open("storm_shelve",flag='w')
-
-    # try:
-
-        
-    #     print(settings['settings'])
-
-    #     print(settings['Balance'])
-
-    #     settings['Balance'] = False
-                
-
-
-
-    #     print(settings['Balance'])
-
-
-    # except Exception as ex:
-    #     print(ex)
-
-        
-    # settings.close()
-    
-
-    # ScanThePorts1()
+   
