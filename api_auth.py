@@ -84,7 +84,7 @@ def ModemBalance(accountId,comPort,isActive,imei, balance):
     authtoken = getauthtoken()
 
 
-    print(authtoken)
+    #print(authtoken)
 
     try:
     
@@ -298,8 +298,8 @@ def Update_Retry_RequestId(settings,requestId, value):
 
     response = requests.request("POST", url, headers=headers, data=payload)
 
-    print(response.text)
-    return(response.text)
+    print(response.status_code)
+    return(response.status_code)
 
 def Update_Retry_TransactionId(settings,transactionId, retry):
     
@@ -315,8 +315,7 @@ def Update_Retry_TransactionId(settings,transactionId, retry):
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
-
-    print(response.text)
+    
     return(response.text)
 
 def Update_Process_failed(settings, message,deviceId, requestId):
@@ -348,10 +347,11 @@ def Update_Process_Success(settings, message,bBefore,bAfter,refno,deviceId,reque
         authtoken = getauthtoken()
                 
         host = settings['host']
+        
+        transaction = "commit"
 
-
-        url = host + "/Remote/Process_Success?message=" + message + "&bBefore="+ bBefore + "&bAfter=" + bAfter + "&refno="+ refno + "&deviceId="+ deviceId +"&requestId=" + requestId
-
+        url = host + "/Remote/Process_Success?message=" + str(message) + "&bBefore="+ str(bBefore) + "&bAfter=" + str(bAfter)        + "&refno="+ str(refno) + "&deviceId="+ str(deviceId) +"&requestId=" + str(requestId) + "&transaction=" + transaction
+        print(url)
         payload = {}
         headers = {
         'Authorization': 'Bearer ' + authtoken
@@ -369,7 +369,6 @@ def AnyTransactions_ForAccount(settings):
         authtoken = getauthtoken()
                 
         host = settings['host']
-
 
         url = host + "/Remote/Remote/AnyTransactions_ForAccount?accountId=" + settings["accountId"]
 

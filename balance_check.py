@@ -1,6 +1,7 @@
 from asyncio import Queue
 from threading import Thread
-import pyodbc
+import json
+#import pyodbc
 import sqlalchemy as sal
 import pandas as pd
 from sqlalchemy import create_engine
@@ -18,49 +19,12 @@ import datetime
 from class_objects import Logging_File
 import shelve
 import pickle
-from api_auth import ModemBalance
+from api_auth import ModemBalance,GetComportForIMEI
 
 
 def run_balance(port):
     print(f"Port {port}")
 
-def get_active_ports():
-
-    server = "0.0"
-
-    try:
-        with open("C:/System/Data/rabbit.pck","rb") as data_file:
-               server = pickle.load(data_file)
-               
-    except:
-            
-            pass
-
-    query = "select [DeviceId],rtrim([ComPort]),isnull([SimPin],'0000'),[DeviceReference],[ZoneId],[DeviceDetail],isnull([IMEI],'?') as IMEI,[DeviceNumber] " +\
-        "from [dbo].[tbl_PLATFORM_Devices] " +\
-        f"where [ZoneId] > 0 and [server] = '{server}' " # and rtrim([ComPort]) = 'COM38'"
-
-
-    print(query)
-
-    msg = jsonMessage('C',f"{query}")  # send the queue to rabbit
-
-    #sendRabbit(msg,"D")
-
-    engine = mssql_engine()  # imported from database.py
-    conn = engine.raw_connection()
-
-    cur_known = conn.cursor()
-
-    result = cur_known.execute(query).fetchall()
-
-    # result = engine.execute(query)
-    # engine.commit()
-   
-    return result
-
-
-def get_single_port(port):
 
     server = "0.0"
 
@@ -124,11 +88,10 @@ def set_balance(deviceId, balance,logger, server):
 
 
         # print(query)
-
         
         msg = jsonMessage('C',f"{query}")  # send the queue to rabbit
 
-        sendRabbit(msg,"D")
+        #sendRabbit(msg,"D")
 
         logger.writelog("set_balance",f"{query}")
 
@@ -216,6 +179,7 @@ class BC():
 
         self.port = modem['port']   # (28, 'COM41', '0000', '603032658220983', '5', 'NADIA', '867444030261376')
         self.imei = modem['IMSI']
+        self.simPin = "0000"
         self.logger = logger
         self.settings = settings
         self.modem = modem
@@ -232,18 +196,43 @@ class BC():
 
             strPort = []
 
-            ser = initSerial(self.port,19200)
 
+            try:
+                 portResponse = GetComportForIMEI(self.imei,self.settings)
+
+                 for port in json.loads(portResponse):
+
+                    self.simPin = port["simpin"]
+                    print(self.simPin)
+
+                
+                 
+            except Exception as ex:
+                 print('SimPin: ' + ex)
+                 
+            
+            if(self.simPin == "0000"):
+                print('Simpin is invalid')
+                return
+
+            ser = initSerial(self.port,19200)
+            
+            
+    	    
             print(ser.isOpen())
            
             current_time = datetime.datetime.now().strftime("%H:%M:%S")
 
             if(ser.isOpen()):
 
+
+                
+
+
                 print(self.modem["balanceAt"])
 
             #port[2] is the sim pin
-                response = get_balance(ser,self.logger,self.settings,f'"*{self.modem["balanceAt"]}*{str(self.modem["simPin"])}#",15','cusd','Votre',False,'1',self.port[1])
+                response = get_balance(ser,self.logger,self.settings,f'"*{self.modem["balanceAt"]}*{str(self.simPin)}#",15','cusd','Votre',False,'1',self.port[1])
                 
 
 
@@ -354,7 +343,9 @@ def taskBalance(que,logger, modem):
 
 # calling witn modem list
 def Threadedbalance( modems):  # <-- modems is the modems.pickle... modems.json
-
+        ''' this takes the modems in the modems.json 
+        loops through them and reports the balance to the server.
+           '''
         with open("C:/System/Data/nocount_timeout.pck","wb") as data_file:
             pickle.dump(75,data_file)  # modem timeout
             pickle.dump(4,data_file)   # slow response
@@ -368,8 +359,8 @@ def Threadedbalance( modems):  # <-- modems is the modems.pickle... modems.json
 
             print(modem)
 
-            if modem["port"] != "com8":    
-                taskBalance(que,logger, modem)
+            #if modem["port"] != "com8":    
+            taskBalance(que,logger, modem)
 
 
             #return

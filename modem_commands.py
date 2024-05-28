@@ -47,7 +47,7 @@ def get_modem_response( ser, *args,**kwargs):
 
         return response
         
-    rabbitTransaction(f"{response}",2)
+    #rabbitTransaction(f"{response}",2)
 
     return response
 
@@ -600,7 +600,6 @@ def modem_cusd_Logger(port_to_send_to, logger, settings, *args):  # *args here a
             readSplitter = str(readResponse).split(',')
         except Exception as ex:
             print(ex)
-
         
         try:
             error = readSplitter[0]

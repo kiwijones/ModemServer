@@ -40,7 +40,6 @@ def updateRetry_Request(requestId, retry):
         f"set retry = {value} " +\
             f"where requestID = {requestId}"
     
-
     engine = mssql_engine()
     conn1 = engine.raw_connection()
     cursor = conn1.cursor()
@@ -124,6 +123,34 @@ def run_Transaction( ser,logger, settings, *args,**kwargs):
 
 
     print("run_Transaction", args) 
+
+
+    for key, value in kwargs.items():
+        print(f"{key} = {value}")
+
+
+    try:
+         
+
+        print(args[4])
+
+
+        if(int(args[4]) == 2):
+
+
+            trResponse = TransactionResponse(0,
+                                            message1="cusd",
+                                            message2="Transfert a l'agent 213560195955 a ete effectue avec succes. Montant STORMCREDIT 10000 Dinar. Numero de l'operation",
+                                            message3="68",
+                                            message4=""
+                                            )
+            
+            return trResponse
+
+    except Exception as ex:
+        return
+
+   
 
     with open("C:/System/Data/nocount_timeout.pck","wb") as data_file:
         pickle.dump(300,data_file)  # modem timeout
@@ -279,6 +306,7 @@ def process_transaction(*args, logger,settings):
                                 comPort = str(port["ComPort"])
                                 currentBalance = port["Balance"]
                                 simPin = port["simPin"]
+                                accountdeviceId = port["AccountdeviceId"]
                                 print(comPort)
                                 
                                 # if we have a port with enough balance then break out
@@ -295,10 +323,15 @@ def process_transaction(*args, logger,settings):
         try:
 
             print("==================================================================================")
-            print("==================================================================================")
-
+           
             if(int(currentBalance) < int(args['amount'])):
                 print("not enough credit")
+                return
+
+
+
+            if(simPin == "0000"):
+                print("Sim Pin incorrect: 0000")
                 return
 
             print('=== Found ===')
@@ -350,20 +383,45 @@ def process_transaction(*args, logger,settings):
                     print('is_integer:' + ex)
                     
                 try:
-                    # at this point the netwoek operator want the transaction comfirmed
+                    # at this point the network operator want the transaction comfirmed
                     if 'confirmer.' in str(transactionResult.message2):
 
                         print('do conformation')
                         
-                        confirmResult = run_Transaction(ser,logger,settings, f'"1",15','cusd','succes',retry,1,requestId)
+
+
+
+
+
+
+                        # kwards 2 here is a flag to indicate that a conformation is being done
+                        confirmResult = run_Transaction(ser,logger,settings, f'"1",15','cusd','succes',retry,2,requestId)
                         
                         # at this point we can finalize the transaction
                         # transaction error -1 is a fail
 
+                        # Transfert a l'agent 213560195955 a ete effectue avec succes. Montant STORMCREDIT 10000 Dinar. Numero de l'operation
                         
 
-                        print(type(confirmResult))
+                        # try:
+                        #     if is_integer(confirmResult.errorCode):
+                        #         if int(confirmResult.errorCode) < 0:
+                            
+                        #             return(confirmResult)
+                            
+                        # except Exception as ex:
+                        #     print('is_integer:' + ex)
 
+
+
+                        # print(type(confirmResult))
+
+                        # return the modems current credit to add to the transaction 
+                        try:
+                            confirmResult.message4 = str(comPort) + "," + str(currentBalance) + "," + str(accountdeviceId)
+                        except Exception as ex:
+                            pass
+                        
                         print(str(confirmResult.errorCode))
                         print(str(confirmResult.message1))
                         print(str(confirmResult.message2))
@@ -393,8 +451,6 @@ def process_transaction(*args, logger,settings):
 
         except Exception as ex:
             print(ex)
-
-
 
             print(f'Process with {comPort}')
 
@@ -730,11 +786,13 @@ class Process_Success():
     # conn1 = engine.raw_connection()
     # cursor = conn1.cursor()
 
-    def __init__(self, requestid, transactionid, processmode, setings):
+    def __init__(self, requestid, transactionid, processmode, settings):
         self.transactionid = transactionid
         self.requestid = requestid
         self.processmode = processmode
+        self.settings = settings
         self.__orderid = 0
+
 
     @timer_decorator
     def GetOrderId(self):
@@ -742,104 +800,87 @@ class Process_Success():
         return self.__orderid
 
     # @logger
-    @timer_decorator
-    def update_Transaction_qry_success(self,requestId,bBefore,bAfter,deviceId,message,refno,logger):
+    #@timer_decorator
+    def update_Transaction_qry_success(self,bBefore,bAfter,deviceId,message,refno,logger):
 
-        print("update_Transaction_qry_success".center(30,"*"))
+        print("update_Transaction_qry_success".center(50,"*"))
+
+        api_auth.Update_Process_Success(
+            settings=self.settings,
+            bBefore=bBefore,
+            bAfter=bAfter,
+            message=message,
+            refno=refno,
+            deviceId=deviceId,
+            requestId=self.requestid
+
+            )
 
 
         return
 
-        # print(requestId)
-        # print(bBefore)
-        # print(bAfter)
-        # print(refno)
-        # print(message)
-
-        #"[FlexyResponseMessage] = '"+ message.split(':')[1] + "', " +\
-
-        updateTrans_qry = "set nocount on; update [dbo].[tbl_GATEWAY_FlexyTransactions] " + \
-            "set [FlexyResponseId] = 0, " + \
-                "[FlexyResponseMessage] = '"+ message +"', " +\
-                    "[BalanceBefore] = " + bBefore + ", " + \
-                        "[BalanceAfter] = " + bAfter + ", " + \
-                            "[TransactionStatusId] = 3, " + \
-                                "[TransactionTime] = getdate(), " + \
-                                    "[RefNumber] = '" + refno + "', " + \
-                                        "[DeviceId] = " + deviceId + " " + \
-                                            "where [RequestId] = " + str(requestId) +" " +\
-                                                "delete from [dbo].[tbl_GATEWAY_FlexyRequests] " + \
-                                                    "where [RequestId] = " + str(requestId) +\
-                                                        "update [dbo].[tbl_PLATFORM_Devices] " +\
-                                                            "set [Balance] = " + bAfter + ", " +\
-                                                                "[LastBalance] = getdate() " +\
-                                                                    "where [DeviceId] = " + deviceId
-
-
-        print("*"*75)
-        print(updateTrans_qry)
-        print("*"*75)
-
-        result_SQL = self.cursor.execute(updateTrans_qry)
-
-        self.cursor.commit()
-        
-        result = logger.writelog("Process_transaction 14: update_Transaction_qry_success",f"Success FlexyTransactions {result_SQL}")
-
-        msg = jsonMessage("C",result)
-        #sendRabbit(msg,"D")
-
-        result = logger.writelog("Process_transaction 13: update_Transaction_qry_success",f"---------------------------------------------")
-
-        msg = jsonMessage("C",result)
-        #sendRabbit(msg,"D")
-
-        print(result)
-
-    @timer_decorator
+    #@timer_decorator
     # @logger
     def process(self, logger):
 
         print(f"RequestId {self.requestid}")
     
         print(f"TransactionId {self.transactionid}")
-
-
-        result = logger.writelog("Process_transaction 12",f"process Transaction {self.requestid}")
-        msg = jsonMessage("C",result)
-        #sendRabbit(msg,"D")
-
-        query = ''   
-
-        # setting nocount seems
-        # added 15/04/2023
-        # if we get a success from the netork then set the retry value to -1
-        # this should prevent the transaqction from being called again if the below fails
-        try:    
-            updateRetry_Request(self.requestid,4)
-        except Exception as ex:
-            print(ex)
-
-
+        
+        
         try:
-            query = "set nocount on; exec bluechip.dbo.sp_PLATFORM_StormPaymentV2 "  + str(self.requestid) + ",1,'" + self.transactionid + "'," + str(self.processmode)
-            
-            result = logger.writelog("Process_transaction 11",f"process Transaction: {query}")
-            msg = jsonMessage("C",result)
-            #sendRabbit(msg,"D")
+            print(f'*** Update_Retry_RequestId -1 ***')
 
+            replyResponse = api_auth.Update_Retry_RequestId(self.settings,self.requestid,-1)    
 
+            print(replyResponse)
 
         except Exception as ex:
-
-            result = logger.writelog("Process_transaction",f"{ex}")
-            msg = jsonMessage("C",result)
-            #sendRabbit(msg,"D")
-
             print(ex)
+
+
+
+
+
+
+        # result = logger.writelog("Process_transaction 12",f"process Transaction {self.requestid}")
+        # msg = jsonMessage("C",result)
+        # #sendRabbit(msg,"D")
+
+        # query = ''   
+
+        # # setting nocount seems
+        # # added 15/04/2023
+        # # if we get a success from the netork then set the retry value to -1
+        # # this should prevent the transaqction from being called again if the below fails
+        # try:    
+        #     updateRetry_Request(self.requestid,4)
+        # except Exception as ex:
+        #     print(ex)
+
+
+        # try:
+        #     query = "set nocount on; exec bluechip.dbo.sp_PLATFORM_StormPaymentV2 "  + str(self.requestid) + ",1,'" + self.transactionid + "'," + str(self.processmode)
+            
+        #     result = logger.writelog("Process_transaction 11",f"process Transaction: {query}")
+        #     msg = jsonMessage("C",result)
+        #     #sendRabbit(msg,"D")
+
+
+
+        # except Exception as ex:
+
+        #     result = logger.writelog("Process_transaction",f"{ex}")
+        #     msg = jsonMessage("C",result)
+        #     #sendRabbit(msg,"D")
+
+        #     print(ex)
 
         orderNumber = "0"
-        print(query)
+
+
+        return
+        #print(query)
         try:
 
 
@@ -927,20 +968,35 @@ class NewTransactions():
             amount = dataRow['amount']
             requestId = dataRow['requestId']
             retry = dataRow['retry']
+            transactionId  = dataRow["transactionID"]
 
-            print(phoneNo)
-            print(amount)
-            print(requestId)
-           
-            print(retry)
-
-            #return
-
-
-
+            print( str(phoneNo) + " " + str(amount) + " " + str(requestId) + " " + str(retry))
+            
             try:
 
                 transaction_result =  process_transaction(dataRow,logger=self.logger,settings=settings)
+
+                #"Transfert a l'agent 213560195955 a ete effectue avec succes. Montant STORMCREDIT 10000 Dinar. Numero de l'operation"
+                try:
+                    amountCredited = str(transaction_result.message2).split(' ')[11]
+
+                    #currentCredit = dataRow[4]
+                    # message4 has the comport & the modem credit before transaction
+                    commDetails = str(transaction_result.message4).split(',')
+
+                    bBefore = int(float(string_remove_chars(commDetails[1])))
+
+                    bAfter =  bBefore - int(amountCredited)
+
+                    accountDeviceId = string_remove_chars(commDetails[2])
+                    
+                except Exception as ex:
+                    bBefore = -1
+                    bAfter = -1
+                    accountDeviceId = -1
+
+                    print("bBefore bAfter: " + ex)
+                    pass
 
                 print('--- transaction done ---')
 
@@ -968,7 +1024,23 @@ class NewTransactions():
                 
                 if(int(transaction_result.errorCode) >= 0):
                     print("success")
-                    success = Process_Success(requestid=requestId)
+                    success = Process_Success(
+                        requestid=requestId,
+                        transactionid=transactionId,
+                        processmode="?",
+                        settings=settings)
+                    
+
+                success.process(logger=logger)
+
+                success.update_Transaction_qry_success(
+                    bBefore=bBefore,
+                    bAfter=bAfter,
+                    deviceId=accountDeviceId,
+                    message= string_remove_chars(transaction_result.message2),
+                    refno="RefNo",
+                    logger=logger)
+
 
             except Exception as ex:
                 
@@ -1025,6 +1097,11 @@ if __name__ == "__main__":
 
     logger = Logging_File()    
 
+    test = "Transfert a l'agent 213560195955 a ete effectue avec succes. Montant STORMCREDIT 10000 Dinar. Numero de l'operation"
+
+    resultMessageSplit = test.split(' ')
+
+
     try:
         with open('C:/System/Data/settings.pck', 'rb') as file:
                 # Unpickle the data
@@ -1034,6 +1111,7 @@ if __name__ == "__main__":
                 try:
                     NewTransactions(45,logger=logger,settings=settingsFile,simulate=False)
                 except Exception as ex:
+                    print('Possible API Error getitng transactions for account')
                     print(ex)
 
 
