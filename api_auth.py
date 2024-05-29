@@ -79,7 +79,7 @@ def getauthtoken():
 
     return azure_Auth_Load["access_token"]
 
-def ModemBalance(accountId,comPort,isActive,imei, balance):
+def ModemBalance(accountId,comPort,isActive,imei, balance, logger):
     
     authtoken = getauthtoken()
 
@@ -240,13 +240,19 @@ def ModemStartup(accountId,comPort,isActive,imsi,imei,  balance, server, simType
         # partner azure
         print(getauthtoken())
 
-def GetComportForIMEI(imei, settings):
+def GetComportForIMEI(imei, settings, logger):
     
+    logger.writelog("GetComportForIMEI",imei)
     authtoken = getauthtoken()
+    
+    print(authtoken)
+
     host = settings['host']
     accountId = settings['AccountId']
 
     url = host + "/Remote/Get_ComportForIMSI?accountId=" + accountId +"&imsi=" + imei
+
+    print(url)
 
     payload = {}
     headers = {
@@ -255,11 +261,14 @@ def GetComportForIMEI(imei, settings):
 
     response = requests.request("GET", url, headers=headers, data=payload)
 
-    print(response.text)
+    #print(response.text)
+    logger.writelog("GetComportForIMEI",response.text)
+
     return(response.text)
 
-def Get_ComportForProduct(settings, productId, amount):
+def Get_ComportForProduct(settings, productId, amount, logger):
 
+    logger.writelog("Get_ComportForProduct",str(productId))
     authtoken = getauthtoken()
     host = settings['host']
     accountId = settings['AccountId']
@@ -273,7 +282,10 @@ def Get_ComportForProduct(settings, productId, amount):
 
     response = requests.request("GET", url, headers=headers, data=payload)
 
-    print(response.text)
+    #print(response.text)
+
+    logger.writelog("Get_ComportForProduct",str(response.text))
+
     return(response.text)
 
     pass
@@ -340,10 +352,11 @@ def Update_Process_failed(settings, message,deviceId, requestId):
     except Exception as ex:
         print(ex)
 
-def Update_Process_Success(settings, message,bBefore,bAfter,refno,deviceId,requestId):
+def Update_Process_Success(settings, message,bBefore,bAfter,refno,deviceId,requestId,logger):
    
     try:
-       
+        logger.writelog("Update_Process_Success",str(message))
+
         authtoken = getauthtoken()
                 
         host = settings['host']
@@ -360,6 +373,7 @@ def Update_Process_Success(settings, message,bBefore,bAfter,refno,deviceId,reque
         response = requests.request("POST", url, headers=headers, data=payload)
 
         print(response.text)
+        #logger.writelog("Update_Process_Success",str(response.text))
     except Exception as ex:
         print(ex)
 
@@ -376,7 +390,6 @@ def AnyTransactions_ForAccount(settings):
         headers = {
         'Authorization': 'Bearer ' + authtoken
         }
-
 
 
         response = requests.request("GET", url, headers=headers, data=payload)

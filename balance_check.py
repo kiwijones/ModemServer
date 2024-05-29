@@ -57,11 +57,10 @@ def run_balance(port):
     # engine.commit()
    
     return result
-#@timer_decorator
-
-def set_RemoteBalance(settings,comPort,ismiResponse, balance):
+@timer_decorator
+def set_RemoteBalance(settings,comPort,ismiResponse, balance, logger):
      
-     ModemBalance(settings['AccountId'],comPort,1,ismiResponse, balance)
+     ModemBalance(settings['AccountId'],comPort,1,ismiResponse, balance, logger=logger)
 
 def set_balance(deviceId, balance,logger, server):
 
@@ -146,13 +145,15 @@ def get_balance( ser, logger,settings, *args,**kwargs):
             # response = modem_cusd(ser, args ,kwargs)
             response = modem_cusd_Logger(ser, logger,settings,args ,kwargs)
 
-            pass
+            try:
+                logger.writeLog("get_balance",response.message2)
+
+            except ex:
+                pass
     except Exception as ex:
         print("Error opening port")
-
    
     return response
-
 
 class BC():
 
@@ -178,14 +179,14 @@ class BC():
 
         self.port = modem['port']   # (28, 'COM41', '0000', '603032658220983', '5', 'NADIA', '867444030261376')
         self.imei = modem['IMSI']
-        self.simPin = "0000"
+        self.simPin = ""
         self.logger = logger
         self.settings = settings
         self.modem = modem
 
 
         print('__INIT__ : ' + self.port + " " + self.accountId)
-
+    @timer_decorator
     def port_balance(self):
 
             print('self')
@@ -196,11 +197,14 @@ class BC():
             strPort = []
 
             try:
-                 portResponse = GetComportForIMEI(self.imei,self.settings)
+                portResponse = GetComportForIMEI(self.imei,self.settings, self.logger)
+                
+                self.logger.writelog("port_balance",portResponse)
 
-                 for port in json.loads(portResponse):
+                for port in json.loads(portResponse):
 
                     self.simPin = port["simpin"]
+                    balanceAt = port["balanceAt"]
                     print(self.simPin)
  
             except Exception as ex:
@@ -220,10 +224,10 @@ class BC():
             if(ser.isOpen()):
 
 
-                print(self.modem["balanceAt"])
+                print(balanceAt)
 
             #port[2] is the sim pin
-                response = get_balance(ser,self.logger,self.settings,f'"*{self.modem["balanceAt"]}*{str(self.simPin)}#",15','cusd','Votre',False,'1',self.port[1])
+                response = get_balance(ser,self.logger,self.settings,f'"*{balanceAt}*{str(self.simPin)}#",15','cusd','Votre',False,'1',self.port[1])
                 
 
 
@@ -264,7 +268,7 @@ class BC():
                            # 28,867444030261376,COM44,800000,22/02/2023 08:13:43,5,NADIA,True
                             if balance_message[4].isdigit(): # if a -1 is received then its a possible slow response from the
                                 
-                                lastDate = set_RemoteBalance(self.settings, self.port,self.imei,balance_message[4])
+                                lastDate = set_RemoteBalance(self.settings, self.port,self.imei,balance_message[4], self.logger)
 
                                 #lastDate = set_balance(self.port[0],response[5],self.logger, self.server)  
 
@@ -352,16 +356,16 @@ def Threadedbalance( modems):  # <-- modems is the modems.pickle... modems.json
             print(modem)
 
             #if modem["port"] != "com8":    
-            taskBalance(que,logger, modem)
+            #taskBalance(que,logger, modem)
 
 
             #return
 
-            # t = Thread(target=taskBalance,args=(modem['port'],que,logger,modems))
+            t = Thread(target=taskBalance,args=(que,logger,modem))
             
-            # # print(t)
-            # threads.append(t)
-            # t.start()
+            # print(t)
+            threads.append(t)
+            t.start()
 
                 
         for t in threads:
@@ -383,7 +387,6 @@ def Threadedbalance( modems):  # <-- modems is the modems.pickle... modems.json
         with open("C:/System/Data/active_zones.pck","wb") as data_file:
             pickle.dump(active_zones,data_file)
             
-
         msg = jsonMessage('DW','|'.join(map(str,sorted(que))))  # send the queue to rabbit
         #sendRabbit(msg,"D")  # D here is dashboard
 

@@ -6,7 +6,7 @@ pip install pyodbc
 pip install pandas
 pip install sqlalchemy
 pip install requests
-
+pip install pika
 
 
 

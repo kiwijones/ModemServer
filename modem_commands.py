@@ -574,7 +574,7 @@ def modem_cusd_Logger(port_to_send_to, logger, settings, *args):  # *args here a
 
 
     # print("*"*50)
-
+    
     args = args[0]  # new args is the first tuple 
 
     #print(args) 
@@ -597,6 +597,7 @@ def modem_cusd_Logger(port_to_send_to, logger, settings, *args):  # *args here a
 
     print("CMD to Send",atCommand)
    
+    logger.writelog("CMD to Send",atCommand)
 
     port_to_send_to.write(atCommand)
     
@@ -646,6 +647,8 @@ def modem_cusd_Logger(port_to_send_to, logger, settings, *args):  # *args here a
                                          message3=message3,
                                          message4=message4
                                          )
+        
+        logger.writelog("trResponse",str(error) + " " + str(message1) + " " + str(message2) + " " + str(message3) + " " + str(message4))
         return trResponse
     
     except Exception as ex:

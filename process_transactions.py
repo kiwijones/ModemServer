@@ -228,26 +228,7 @@ returns TransactionResponse
     service_amount = args["amount"]  # RESET THIS BACK TO 0 SERVICE AMOUNT WILL BE SET FROM THE MODEM BALANCE
     simPin = ''
    
-    #print(type(service_amount))
 
-        # print(service_amount)
-   
-        # print("we have an amount")
-        
-    #print(int(service_amount))
-
-    # try:
-
-    #     print(args['amount'])
-    #     print(args['retry'])
-
-    # except Exception as ex:
-    #     print(ex)
-
-
-        #return
-        #if(int(service_amount) >= int(args['amount'])):  # the modem credit is greater or equals to requested
-            # print("Continue with transaction")
             
     productId = args['productId']
     phoneNo = args['phoneNumber']
@@ -285,7 +266,7 @@ returns TransactionResponse
                 if(item['productId'] == str(productId)):
 
                     try:
-                        portResponse = api_auth.Get_ComportForProduct( settings,productId,args['amount'])
+                        portResponse = api_auth.Get_ComportForProduct( settings,productId,args['amount'], logger=logger)
                         
                         simpin = ""
                         for port in json.loads(portResponse):
@@ -760,7 +741,8 @@ class Process_Success():
             message=message,
             refno=refno,
             deviceId=deviceId,
-            requestId=self.requestid
+            requestId=self.requestid,
+            logger=logger
 
             )
 

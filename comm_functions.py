@@ -1,5 +1,5 @@
 import smtplib
-#import pika
+import pika
 import datetime
 from threading import Thread
 import json
@@ -86,7 +86,7 @@ def rabbitTransaction(message, action):
     
         # print('8'*56)
     try:
-        host = "vpn.etlie.com"
+        host = "92.51.204.82"
 
         credentials = pika.PlainCredentials('modems', 'v5aWf74MrcDh4Tb')
 
@@ -297,10 +297,60 @@ def string_remove_chars(string):
 
     return string
 
+def sendRabbit(message, queue):
+    '''the function that connects to the RabbitMQ server'''
+    
+    try:
+        if 'EXCEPTION' in message:
+            sendmail("bjones@etlie.com","Modem Server Exception",message)
+            #sendmail("Technique@proservedz.com","Modem Server Exception",message)
+    except Exception as ex:
+        print(ex)
+
+    try:
+
+        userName = "vend"
+        password = "YHgc7RLiNJaJVmx"
+        host = "92.51.204.82"
+        
+        # print(message)       
+        credentials = pika.PlainCredentials(username=userName, password=password)
+
+        parameters = pika.ConnectionParameters(host,
+                                            5672,
+                                            '/',
+                                            credentials)
+
+        connection = pika.BlockingConnection(parameters)
+
+        channel = connection.channel()
+
+        # channel.queue_declare(queue='')
+
+        if queue == 'D':
+            
+
+            channel.basic_publish(exchange='storm.fanout',
+                        
+                        routing_key='Storm-Dashboard',
+                        # body='Storm --> ' + str(message).rstrip() + ' --> ' + datetime.datetime.now().strftime("%H:%M:%S"))
+                        body = str(message).rstrip().replace('[','').replace(']','').replace("'",""))
+                      
+                        
+        else:
+            channel.basic_publish(exchange='',
+                        routing_key='Vend-Debug',
+                        body='Storm --> ' + str(message).rstrip() + ' --> ' + datetime.datetime.now().strftime("%H:%M:%S"))
+
+        
+    except Exception as ex:
+        print('EX Rabbit')
+        print(ex)
 
 if __name__ == "__main__":
 
-    # receiveRabbit()    
+    print("__main__")
+    #receiveRabbit()    
 
 
     # shelve_one = 'C:/System/Data/shelve_one.shlv'
@@ -316,5 +366,4 @@ if __name__ == "__main__":
     # print(list(running_shelve.items()))
     
     msg = jsonMessage('D','Test')  # send the queue to rabbit
-    #sendRabbit(msg.replace('\n',''),"D")
-
+    sendRabbit(msg.replace('\n',''),"D")

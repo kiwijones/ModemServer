@@ -1,6 +1,6 @@
 import os
 from modem_commands import *
-from database import *
+#from database import *
 from balance_check import *
 from process_transactions import *
 from serial_port import scanModems,port_check
