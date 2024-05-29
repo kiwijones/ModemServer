@@ -4,6 +4,7 @@ import requests
 import json
 import pickle
 from datetime import datetime
+from comm_functions import jsonMessage,sendRabbit
 
 def getauthtoken():
 
@@ -79,10 +80,9 @@ def getauthtoken():
 
     return azure_Auth_Load["access_token"]
 
-def ModemBalance(accountId,comPort,isActive,imei, balance, logger):
+def ModemBalance(accountId,comPort,isActive,imei, balance, logger, settings):
     
     authtoken = getauthtoken()
-
 
     #print(authtoken)
 
@@ -100,15 +100,16 @@ def ModemBalance(accountId,comPort,isActive,imei, balance, logger):
         print(url)
         #print(authtoken)
 
+        formatBalance = balance.replace("'","")
+
         payload = json.dumps({
         "accountId": accountId,
         "comPort": comPort,
-        "balance": balance.replace("'",""),
+        "balance": formatBalance,
         "isActive": isActive,
         "imei": imei
 
         })
-
         
         headers = {
         'Content-Type': 'application/json',
@@ -117,9 +118,12 @@ def ModemBalance(accountId,comPort,isActive,imei, balance, logger):
 
         response = requests.request("POST", url, headers=headers, data=payload)
 
-        print(response.status_code)
+        msg = jsonMessage( 'C',f"{ comPort},{imei},{formatBalance}", 'ModemBalance', settings=settings)  # send the queue to rabbit
 
-        print(payload)
+        sendRabbit(msg,"D")    
+        # print(response.status_code)
+
+        # print(payload)
 
         return
 
@@ -178,7 +182,7 @@ def SendLastSeen(accountId,comPort,isActive,imei, balance):
             return
     
 
-def ModemStartup(accountId,comPort,isActive,imsi,imei,  balance, server, simType, simPin ):
+def ModemStartup(accountId,comPort,isActive,imsi,imei,  balance, server, simType, simPin, settings ):
 
     # only called on port_scan uopn startup
     
@@ -201,7 +205,7 @@ def ModemStartup(accountId,comPort,isActive,imsi,imei,  balance, server, simType
 
             url = host + "/Remote/Update_AccountStartUp"
 
-            print(url)
+            #print(url)
             #print(authtoken)
 
             payload = json.dumps({
@@ -223,6 +227,12 @@ def ModemStartup(accountId,comPort,isActive,imsi,imei,  balance, server, simType
 
             response = requests.request("POST", url, headers=headers, data=payload)
 
+            try:
+                msg = jsonMessage( 'C',f"{ comPort},{imei},{simType}", 'ModemStartup', settings=settings)  # send the queue to rabbit
+                sendRabbit(msg,"D")
+            except:
+                pass
+            
             print(response.status_code)
             print(payload)
 
@@ -292,6 +302,13 @@ def Get_ComportForProduct(settings, productId, amount, logger):
 
 def Update_Retry_RequestId(settings,requestId, value):
     
+    try:
+            msg = jsonMessage( 'C',f"{requestId},{value}", 'Update_Retry_RequestId', settings=settings)  # send the queue to rabbit
+
+            sendRabbit(msg,"D")
+    except:
+            pass 
+
     authtoken = getauthtoken()
 
     host = settings['host']
@@ -379,7 +396,17 @@ def Update_Process_Success(settings, message,bBefore,bAfter,refno,deviceId,reque
 
 def AnyTransactions_ForAccount(settings):
     try:
-       
+
+        # msg = jsonMessage('C',f"{"Ping"}")  # send the queue to rabbit
+
+        # sendRabbit("AnyTransactions_ForAccount",msg,"D", settings=settings)   
+        try:
+            msg = jsonMessage( 'C',f"Ping", 'AnyTransactions_ForAccount', settings=settings)  # send the queue to rabbit
+
+            sendRabbit(msg,"D")
+        except:
+            pass 
+
         authtoken = getauthtoken()
                 
         host = settings['host']

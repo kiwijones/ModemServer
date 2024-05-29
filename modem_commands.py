@@ -288,9 +288,11 @@ def read_from_logger(serialPort, logger,settings, *args):
             #             msg = jsonMessage("C",f"{result}")
             #             sendRabbit(msg,"D")
 
+            timeout = settings["timeout"]
 
             try:
-                print(str(noData_Count))
+                print(f"{str(noData_Count)} of {str(timeout)}" )
+                
                 noData_Count += 1
                 
                 # try:
@@ -298,7 +300,7 @@ def read_from_logger(serialPort, logger,settings, *args):
                 # except Exception as ex:
                 #     print(ex)
                 
-                if int(noData_Count) > int(noData_TimeOut):
+                if int(noData_Count) > int(timeout):
 
                     # if thr transaction retry counter is greater that pickle timeout
                     # then the retry count will be inicremented 
@@ -308,7 +310,8 @@ def read_from_logger(serialPort, logger,settings, *args):
                     try:
                         print(f'*** Update_Retry_RequestId {noData_Count} ***')
 
-                        Update_Retry_RequestId(settings,args[5],args[3])    
+                        Update_Retry_RequestId(settings,args[5],args[3])   
+                         
                     except Exception as ex:
                         print(ex)
                     

@@ -44,28 +44,31 @@ class ThreadRabbitReceive(Thread):
     # def run(self):
     #         receiveRabbit()
 
-def jsonMessage(type,message):
+def jsonMessage(type,message, function,settings):
     print("*"*45)
-    print(message)
+
+
+    # print(message)
   
-    ''' Default json format to send back to RabbitMQ'''
+    # ''' Default json format to send back to RabbitMQ'''
 
-    try:
-        with open("C:/System/Data/rabbit.pck","rb") as data_file:
-            server = pickle.load(data_file)
+    # try:
+    #     with open("C:/System/Data/rabbit.pck","rb") as data_file:
+    #         server = pickle.load(data_file)
 
-            message = server + ' | ' + message
+    #         message = server + ' | ' + message
 
 
-            print(message)
-    except:
-        pass
+    #         print(message)
+    # except:
+    #     pass
 
 
     
 
 
-    dic = {'type': type,'data': str(message).replace('\n','') }
+    dic = {'accountid': settings["AccountId"], 'server': settings["Server"], 'function': function, 'type': type,'data': str(message).replace('\n','') }
+
     jsonString = json.dumps(dic,indent=4)
     return jsonString
 
@@ -334,8 +337,7 @@ def sendRabbit(message, queue):
                         
                         routing_key='Storm-Dashboard',
                         # body='Storm --> ' + str(message).rstrip() + ' --> ' + datetime.datetime.now().strftime("%H:%M:%S"))
-                        body = str(message).rstrip().replace('[','').replace(']','').replace("'",""))
-                      
+                        body = str(message))
                         
         else:
             channel.basic_publish(exchange='',
@@ -365,5 +367,5 @@ if __name__ == "__main__":
 
     # print(list(running_shelve.items()))
     
-    msg = jsonMessage('D','Test')  # send the queue to rabbit
-    sendRabbit(msg.replace('\n',''),"D")
+    # msg = jsonMessage('D','Test')  # send the queue to rabbit
+    # sendRabbit(msg.replace('\n',''),"D")

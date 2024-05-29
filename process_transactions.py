@@ -1,24 +1,21 @@
 # import pyodbc
 import json
-import sqlalchemy as sal
-import pandas as pd
-from sqlalchemy import create_engine
 # import random
 from database import mssql_engine
 from serial_port import initSerial
 #from comm_functions import sendRabbit,jsonMessage,rabbitTransaction,is_integer
 from comm_functions import jsonMessage,rabbitTransaction,is_integer, string_remove_chars
-from modem_commands import modem_cusd,modem_cusd_Logger
+from modem_commands import modem_cusd_Logger
 from decorators import timer_decorator,logger,Sendmail_Decorator,Sendmail_Decorator_2
 
 from class_objects import Logging_File,TransactionResponse
 
 from time import sleep
-import shelve
 import pickle,os
 import api_auth 
 import http.client
 import requests
+from api_auth import AnyTransactions_ForAccount
 
 # @logger
 
@@ -27,27 +24,26 @@ import requests
 # @timer_decorator
 
 # added 15/04/2023
-def updateRetry_Request(requestId, retry):
+# def updateRetry_Request(requestId, retry):
 
-    value = int(retry) + 1
+#     value = int(retry) + 1
 
-    if value > 3:
-        value = -1
+#     if value > 3:
+#         value = -1
 
-    print(value)
+#     print(value)
 
-    query = "set nocount on update [dbo].tbl_GATEWAY_FlexyTransactions " +\
-        f"set retry = {value} " +\
-            f"where requestID = {requestId}"
+#     query = "set nocount on update [dbo].tbl_GATEWAY_FlexyTransactions " +\
+#         f"set retry = {value} " +\
+#             f"where requestID = {requestId}"
     
-    engine = mssql_engine()
-    conn1 = engine.raw_connection()
-    cursor = conn1.cursor()
-    result = cursor.execute(query)
-    cursor.commit()
-    cursor.close()
-    del cursor
-
+#     engine = mssql_engine()
+#     conn1 = engine.raw_connection()
+#     cursor = conn1.cursor()
+#     result = cursor.execute(query)
+#     cursor.commit()
+#     cursor.close()
+#     del cursor
 
 def updateRetry(transactionId, retry):
 
@@ -77,8 +73,6 @@ def updateRetry(transactionId, retry):
 
     # print(query)
     # print(result)
-
-
 
 def any_new_transactions(logger, settings):
 
@@ -864,31 +858,32 @@ class NewTransactions():
         #print(result)
 
 
-        aadAuth = api_auth.getauthtoken()
+        # aadAuth = api_auth.getauthtoken()
 
 
-        print(aadAuth)
+        # print(aadAuth)
 
 
-        #conn = http.client.HTTPSConnection("loyalty.user.kiwijones.com")
+        # #conn = http.client.HTTPSConnection("loyalty.user.kiwijones.com")
 
-        # pulling from the api
+        # # pulling from the api
 
-        conn = http.client.HTTPConnection("remote.retailpay.io")
-        payload = ''
+        # conn = http.client.HTTPConnection("remote.retailpay.io")
+        # payload = ''
        
-        headers = {
-        'Authorization': 'Bearer ' + aadAuth
-        }
-        
-        conn.request("GET", "/Remote/AnyTransactions_ForAccount?accountId=" + settings["AccountId"], payload, headers)
-        res = conn.getresponse()
-        dataFromApi = res.read()
+        # headers = {
+        # 'Authorization': 'Bearer ' + aadAuth
+        # }
+ 
+        # conn.request("GET", "/Remote/AnyTransactions_ForAccount?accountId=" + settings["AccountId"], payload, headers)
+        # res = conn.getresponse()
+        dataFromApi = AnyTransactions_ForAccount(settings=settings)
 
         # print(data)
 
         # parts = data.decode("utf-8").split(',')
         
+
 
         # Parse JSON string into Python object
         python_Api_Data = json.loads(dataFromApi.decode('utf-8'))

@@ -1,23 +1,23 @@
-from asyncio import Queue
+#from asyncio import Queue
 from threading import Thread
 import json
 #import pyodbc
 import sqlalchemy as sal
 import pandas as pd
 from sqlalchemy import create_engine
-import random
+#import random
 from time import sleep,perf_counter
 from database import mssql_engine
 from serial_port import initSerial
-from send_at import ussd_cmd
-from modem_commands import modem_cusd,modem_cusd_Logger,get_modem_response
+#from send_at import ussd_cmd
+from modem_commands import modem_cusd_Logger,get_modem_response
 from decorators import timer_decorator,threadedQueue
 from colorama import *
 #from comm_functions import sendRabbit,jsonMessage
-from comm_functions import jsonMessage
+from comm_functions import jsonMessage,sendRabbit
 import datetime
 from class_objects import Logging_File
-import shelve
+#import shelve
 import pickle
 from api_auth import ModemBalance,GetComportForIMEI
 
@@ -60,7 +60,7 @@ def run_balance(port):
 @timer_decorator
 def set_RemoteBalance(settings,comPort,ismiResponse, balance, logger):
      
-     ModemBalance(settings['AccountId'],comPort,1,ismiResponse, balance, logger=logger)
+     ModemBalance(settings['AccountId'],comPort,1,ismiResponse, balance, logger=logger, settings=settings)
 
 def set_balance(deviceId, balance,logger, server):
 
@@ -205,6 +205,7 @@ class BC():
 
                     self.simPin = port["simpin"]
                     balanceAt = port["balanceAt"]
+                    server = port["Server"]
                     print(self.simPin)
  
             except Exception as ex:
@@ -229,16 +230,12 @@ class BC():
             #port[2] is the sim pin
                 response = get_balance(ser,self.logger,self.settings,f'"*{balanceAt}*{str(self.simPin)}#",15','cusd','Votre',False,'1',self.port[1])
                 
-
-
                 balance_message =  str(response.message2).split(" ")
 
 
-                #response1 = self.logger.writelog("get_balance",f"{self.port[1]} {response}")
+                # msg = jsonMessage('C',f"{balance_message}")  # send the queue to rabbit
 
-                #msg = jsonMessage('C',f"{response1}")  # send the queue to rabbit
-
-                #sendRabbit(msg,"D")
+                # sendRabbit("get_balance",msg,"D", settings=self.settings)
 
                 try:
                     
@@ -309,12 +306,6 @@ class BalanceCheck():
         # setting_file.write_setting_file(False,False)
 
         Threadedbalance(settings)
-                
-    
-def task(id):
-    print(f'Starting the task {id}...')
-    sleep(1)
-    print(f'The task {id} completed')
 
 # @threadedQueue
 def taskBalance(que,logger, modem):
@@ -325,15 +316,8 @@ def taskBalance(que,logger, modem):
 
     bal = BC(logger, modem)  
 
-   
     result = bal.port_balance()
-        
-        
-    # bal.get()
-   
-
-    # print(result)
-
+     
     if len(str(result)) > 10:  # result can come back with None... so drop that
         que.append(result)
 
@@ -357,7 +341,6 @@ def Threadedbalance( modems):  # <-- modems is the modems.pickle... modems.json
 
             #if modem["port"] != "com8":    
             #taskBalance(que,logger, modem)
-
 
             #return
 
@@ -392,21 +375,12 @@ def Threadedbalance( modems):  # <-- modems is the modems.pickle... modems.json
 
 if __name__ == "__main__":
 
-
     try:
      
         with open('C:/System/Data/modems.pck', 'rb') as file:
             # Unpickle the data
             modems = pickle.load(file)
 
-            #print(modems)
-
-            #for modem in modems:   
-                
-                #print(modem)
-
-
-            # pass the modem list 
             Threadedbalance(modems)
             
     except Exception as ex:

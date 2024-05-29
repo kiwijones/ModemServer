@@ -29,7 +29,7 @@ def taskPorts(comPort,que,logger, settings, report):
 
     #return
     # result = logger.writelog("looking for Serial",f"{comPort}")
-    msg = jsonMessage('D',f"looking for Serial (IMEI): {comPort}")  # send the queue to rabbit
+    #msg = jsonMessage('D',f"looking for Serial (IMEI): {comPort}")  # send the queue to rabbit
     #sendRabbit(msg.replace('\n',''),"D")
 
 
@@ -61,7 +61,7 @@ def taskPorts(comPort,que,logger, settings, report):
             # result = logger.writelog("looking for IMSI",f"{serialResponse}")
 
 
-            msg = jsonMessage('D',f"looking for IMSI: {serialResponse}") # send the queue to rabbit
+            #msg = jsonMessage('D',f"looking for IMSI: {serialResponse}") # send the queue to rabbit
             #sendRabbit(msg.replace('\n',''),"D")
 
             print("Now look for IMSI")
@@ -73,7 +73,7 @@ def taskPorts(comPort,que,logger, settings, report):
             if ismiResponse.find("CME") == -1:   # 
                 
                 # result = logger.writelog("Found IMSI",f"{ismiResponse}")
-                msg = jsonMessage('D',f"Found IMSI: {ismiResponse}")  # send the queue to rabbit
+                #msg = jsonMessage('D',f"Found IMSI: {ismiResponse}")  # send the queue to rabbit
                 #sendRabbit(msg.replace('\n',''),"D")
 
                 print("ismiResponse",ismiResponse)
@@ -88,17 +88,18 @@ def taskPorts(comPort,que,logger, settings, report):
                     modemFile = pickle.load(file)
 
                 simType = -1
-                simPin = "0000"
+                simPin = ""
                 for modem in modemFile:
                      if modem["IMSI"] == ismiResponse:
                         simType = modem["type"]
                         simPin = modem["simPin"]
 
-                print('\033[32m'  + "GREAT SUCCESS: "  + comPort + " --> " + ismiResponse + " --> " + simPin)
+
+                print('\033[32m'  + "MODEM FOUND: "  + comPort + " --> " + ismiResponse + " --> " + simPin)
                 
                 try:
                     # this will update insert the modem details on the server
-                    ModemStartup(settings['AccountId'],comPort,1,serialResponse, ismiResponse, 0,settings['Server'],simType,simPin)
+                    ModemStartup(settings['AccountId'],comPort,1,serialResponse, ismiResponse, 0,settings['Server'],simType,simPin, settings=settings)
                 except Exception as ex:
                     print("SendLastSeen: " + ex)
                 
@@ -107,7 +108,7 @@ def taskPorts(comPort,que,logger, settings, report):
             else:
 
                 # result = logger.writelog("CME Error... ",f"{comPort} {serialResponse}")
-                msg = jsonMessage('D',f"CME Error: {comPort} {serialResponse}")  # send the queue to rabbit
+                #msg = jsonMessage('D',f"CME Error: {comPort} {serialResponse}")  # send the queue to rabbit
                 #sendRabbit(msg,"D")
 
                 print("CME Error... ", serialResponse)
@@ -118,7 +119,7 @@ def taskPorts(comPort,que,logger, settings, report):
             
         else:
             print("serialResponse not dgit")
-            msg = jsonMessage('D',f"serialResponse not digit: {comPort}")  # send the queue to rabbit
+            #msg = jsonMessage('D',f"serialResponse not digit: {comPort}")  # send the queue to rabbit
             #sendRabbit(msg,"D")
             # print(Fore.WHITE)
     except Exception as ex:
