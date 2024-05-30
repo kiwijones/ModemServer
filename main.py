@@ -14,6 +14,8 @@ import shelve
 from tkinter import *
 import subprocess
 import pickle
+import pika
+import threading
 
 # root = Tk()
 # root.title("text gui")
@@ -106,16 +108,76 @@ if __name__=='__main__':
     bool_process_balance = True
     bool_reset_counter = False
 
-    receive_thread = ThreadRabbitReceive()
-    receive_thread.start()
+
+    def callback(ch, method, properties, body):
+
+        decoded =  body.decode()
+        print(" [x] Received %r" % decoded)
+        
+        if(decoded == "Get"):
+            CheckForRequests()
+            pass
+
+    
+    def start_consumer():
+        #print(__name__)
+        print("Thread Rabbit Receive")
+        def __init__(self):
+            Thread.__init__(self)
+        rabbitConf = settings["rabbitMq"].split('|')
+
+        print(rabbitConf)
+
+        userName = rabbitConf[0]
+        password = rabbitConf[1]
+        host = rabbitConf[2]
+
+        credentials = pika.PlainCredentials(username=userName, password=password)
+
+        parameters = pika.ConnectionParameters(host,
+                                            5672,
+                                            '/',
+                                            credentials)
+
+        connection = pika.BlockingConnection(parameters)
+
+        channel = connection.channel()
+
+        channel.queue_declare(queue=rabbitConf[3])
+            
+        channel.basic_consume(queue=rabbitConf[3], on_message_callback=callback, auto_ack=True)
+
+        # # print(' [*] Waiting for messages. To exit press CTRL+C')
+        channel.start_consuming()  
+
+
+       
+    def CheckForRequests():
+
+        transaction = NewTransactions(processCounter,logger=logger,settings=settings,simulate=False)
+
+        returnCount = transaction.RunTransaction()
+
+        if(int(returnCount) > 0):
+                    running_shelve['Balance'] = True
+
+        print("Processed: " + str(returnCount)) 
+        
+    # receive_thread = ThreadRabbitReceive()
+    # receive_thread.start()
 
     # settings = shelve.open("C:/System/Data/shelve_one.shlv",flag='w',writeback=True)
     # settings['Ports'] = True
     # settings.close()
 
-
     ScanThePorts(settings,0)
     
+    consumer_thread = threading.Thread(target=start_consumer)
+    consumer_thread.daemon = True
+    consumer_thread.start()
+
+    #consumer_thread.join()
+
     while True:
 
         running_shelve = shelve.open(shelve_one, flag='w')  # open the shelf get the paused param
@@ -145,14 +207,9 @@ if __name__=='__main__':
                 
                 print(f'Looking for requests: {processCounter}')
 
-                transaction = NewTransactions(processCounter,logger=logger,settings=settings,simulate=False)
+                CheckForRequests()
 
-                returnCount = transaction.RunTransaction()
-
-                if(int(returnCount) > 0):
-                    running_shelve['Balance'] = True
-
-                print("Processed: " + str(returnCount)) 
+                
       
         time.sleep(60)
 
