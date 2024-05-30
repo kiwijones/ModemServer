@@ -15,7 +15,7 @@ import pickle,os
 import api_auth 
 import http.client
 import requests
-from api_auth import AnyTransactions_ForAccount
+from api_auth import AnyTransactions_ForAccount,Update_Process_failed
 
 # @logger
 
@@ -45,18 +45,21 @@ from api_auth import AnyTransactions_ForAccount
 #     cursor.close()
 #     del cursor
 
-def updateRetry(transactionId, retry):
+def updateRetry(transactionId, retry,errorCodeFromApi, settings):
 
-    value = int(retry) + 1
-
-    if value > 3:
+    if(errorCodeFromApi < -1):
         value = -1
+    else:    
+        value = int(retry) + 1
+
+        if value > 3:
+            value = -1
 
     print(value)
 
 
 
-    #api_auth.Update_Retry_TransactionId(sett)
+    api_auth.Update_Retry_TransactionId(settings, transactionId=transactionId,retry=value)
 
     # query = "set nocount on update [dbo].tbl_GATEWAY_FlexyTransactions " +\
     #     f"set retry = {value} " +\
@@ -287,7 +290,7 @@ returns TransactionResponse
                    
         try:
 
-            #print("==================================================================================")
+            print("==================================================================================")
            
             if(int(currentBalance) < int(args['amount'])):
                 print("not enough credit")
@@ -629,22 +632,24 @@ class Conn():
 
 
 class Process_Failure:
-    def __init__(self, requestid, retry, settings, transaction):
+    def __init__(self, requestid, transactionId,retry, settings, transaction):
 
         self.requestid = requestid
         self.transaction = transaction
+        self.settings = settings
+        self.transactionId = transactionId
         try:
             self.retry = retry
         except Exception as ex:
             print(ex)
 
-    def incRetry(self):
+    def incRetry(self,errorCodeFromApi):
 
         print("incRetry".center(50,"*"))
        
-        return
+        #return
 
-        updateRetry(self.requestid,self.retry)
+        updateRetry(self.transactionId,self.retry,errorCodeFromApi, settings=self.settings)
 
     # @timer_decorator
     def update_Transaction_qry_failed(self, message, logger):
@@ -673,30 +678,32 @@ class Process_Failure:
         #     print(ex)
       
         try:
-            with open('C:/System/Data/settings.pck', 'rb') as file:
-                # Unpickle the data
-                data = pickle.load(file)
-                host = data['host']
-                url = host + f"/Remote/Process_Failure?message={message}&requestId={self.requestid}&transaction={self.transaction}"
 
-            # "http://remote.retailpay.io/Remote/Process_Failure?message=('ro incorrect',)&requestId=6122"
-            aadAuth = api_auth.getauthtoken()
-            print(aadAuth)
-            print(url)
-            conn = http.client.HTTPConnection("remote.retailpay.io")
-            payload = ''
+
+             Update_Process_failed(self.settings,message=message,requestId=self.requestid)   
+
+
+        #     host = data['host']
+        #     url = host + f"/Remote/Process_Failure?message={message}&requestId={self.requestid}&transaction={self.transaction}"
+
+        #     # "http://remote.retailpay.io/Remote/Process_Failure?message=('ro incorrect',)&requestId=6122"
+        #     aadAuth = api_auth.getauthtoken()
+        #     print(aadAuth)
+        #     print(url)
+        #     conn = http.client.HTTPConnection("remote.retailpay.io")
+        #     payload = ''
         
-            headers = {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + aadAuth
-            }
+        #     headers = {
+        #         'Content-Type': 'application/json',
+        #         'Authorization': 'Bearer ' + aadAuth
+        #     }
 
-            response = requests.request("POST", url, headers=headers, data=payload)
+        #     response = requests.request("POST", url, headers=headers, data=payload)
 
-            print(response.status_code)
+        #     print(response.status_code)
 
         except Exception as ex:
-            print('Remote/Process_Failure: ' + ex)
+             print('Remote/Process_Failure: ' + ex)
        
         return
   
@@ -853,44 +860,32 @@ class NewTransactions():
         self.logger = logger
         self.settings = settings
         
-        #result = self.logger.writelog("NewTransactions",f"({self.counter}) Looking for transactions...")
-
-        #print(result)
-
-
-        # aadAuth = api_auth.getauthtoken()
-
-
-        # print(aadAuth)
-
-
-        # #conn = http.client.HTTPSConnection("loyalty.user.kiwijones.com")
-
-        # # pulling from the api
-
-        # conn = http.client.HTTPConnection("remote.retailpay.io")
-        # payload = ''
-       
-        # headers = {
-        # 'Authorization': 'Bearer ' + aadAuth
-        # }
- 
-        # conn.request("GET", "/Remote/AnyTransactions_ForAccount?accountId=" + settings["AccountId"], payload, headers)
-        # res = conn.getresponse()
-        dataFromApi = AnyTransactions_ForAccount(settings=settings)
+        
 
         # print(data)
 
         # parts = data.decode("utf-8").split(',')
         
+    def RunTransaction(self): 
 
+        
+        dataFromApi = AnyTransactions_ForAccount(self.settings)  
 
         # Parse JSON string into Python object
-        python_Api_Data = json.loads(dataFromApi.decode('utf-8'))
+        try:
+            python_Api_Data = json.loads(str(dataFromApi))
+        except Exception as ex:
+            print(ex)
+            pass
 
         # Print the Python object
         #print(python_object)
+
+        # if returnCount > 0 then we will call a balance check after the transaction ends
+        returnCount = 0
+
         for dataRow in python_Api_Data:
+            returnCount += 1
             phoneNo = dataRow['phoneNumber']
             amount = dataRow['amount']
             requestId = dataRow['requestId']
@@ -901,7 +896,7 @@ class NewTransactions():
             
             try:
 
-                transaction_result =  process_transaction(dataRow,logger=self.logger,settings=settings)
+                transaction_result =  process_transaction(dataRow,logger=self.logger,settings=self.settings)
 
                 #"Transfert a l'agent 213560195955 a ete effectue avec succes. Montant STORMCREDIT 10000 Dinar. Numero de l'operation"
                 try:
@@ -922,23 +917,24 @@ class NewTransactions():
                     bAfter = -1
                     accountDeviceId = -1
 
-                    print("bBefore bAfter: " + ex)
+                    #print("bBefore bAfter: " + ex)
                     pass
 
-                print('--- transaction done ---')
 
-                if(int(transaction_result.errorCode) < 0):
+                transaction_ErrorCode = int(transaction_result.errorCode)
+
+                print(f'--- transaction done  {transaction_ErrorCode} ---')
+                
+
+                if(transaction_ErrorCode < 0):
                     print("failed")
 
-                    retry
-
-
+    
                     fail_message =  string_remove_chars(str(transaction_result.message1)  + str(transaction_result.message2)  + str(transaction_result.message3) + str(transaction_result.message4))
                     
-                    fail = Process_Failure(requestId,0,settings,"rollback")
-
-
-                    fail.incRetry()    
+                    fail = Process_Failure(requestId,transactionId,0,self.settings,"rollback")  # 
+                
+                    fail.incRetry(transaction_ErrorCode)
 
                     fail.update_Transaction_qry_failed(fail_message,logger)
 
@@ -948,6 +944,8 @@ class NewTransactions():
 
                     print(transaction_result.errorCode)
                     print(transaction_result.message1)
+
+                    
                 
                 if(int(transaction_result.errorCode) >= 0):
                     print("success")
@@ -955,55 +953,30 @@ class NewTransactions():
                         requestid=requestId,
                         transactionid=transactionId,
                         processmode="?",
-                        settings=settings)
+                        settings=self.settings)
                     
 
-                success.process(logger=logger)
+                    success.process(logger=self.logger)
 
-                success.update_Transaction_qry_success(
-                    bBefore=bBefore,
-                    bAfter=bAfter,
-                    deviceId=accountDeviceId,
-                    message= string_remove_chars(transaction_result.message2),
-                    refno="RefNo",
-                    logger=logger)
-
+                    success.update_Transaction_qry_success(
+                        bBefore=bBefore,
+                        bAfter=bAfter,
+                        deviceId=accountDeviceId,
+                        message= string_remove_chars(transaction_result.message2),
+                        refno="RefNo",
+                        logger=self.logger)
 
             except Exception as ex:
                 
                 print("failed")
                 print(ex)
-                fail = Process_Failure(requestId,0,settings,"rollback")
+                #fail = Process_Failure(requestId,transactionId=transactionId,0,settings,"rollback")
 
         print('NewTransactions: Out' )
 
+        return(returnCount)    
             
 
-
-
-        # for number in data.decode("utf-8"):
-        #     # Print the number multiplied by 2
-        #     print(number)
-
-        #print(data.decode("utf-8"))
-
-       
-        with open("C:/System/Data/simulate.pck","wb") as data_file:
-            pickle.dump(simulate,data_file)
-
-        #print(self.counter)
-
-        # msg = jsonMessage("C",f"({self.counter}) Looking for transactions...")
-        #msg = jsonMessage("C",f"{result}")
-        #print(msg)
-        #sendRabbit(msg,"D")
-
-        # print("result")
-        #return
-        no_of_Trans = 0
-
-
-        
         
 
 @Sendmail_Decorator_2
@@ -1036,7 +1009,9 @@ if __name__ == "__main__":
                 print(settingsFile)
 
                 try:
-                    NewTransactions(45,logger=logger,settings=settingsFile,simulate=False)
+                    transaction = NewTransactions(45,logger=logger,settings=settingsFile,simulate=False)
+
+                    print("Processed: " + str(transaction.RunTransaction()))
                 except Exception as ex:
                     print('Possible API Error getitng transactions for account')
                     print(ex)

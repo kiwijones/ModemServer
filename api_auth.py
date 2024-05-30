@@ -278,6 +278,15 @@ def GetComportForIMEI(imei, settings, logger):
 
 def Get_ComportForProduct(settings, productId, amount, logger):
 
+        
+    try:
+            msg = jsonMessage( 'C',f"{productId},{amount}", 'Get_ComportForProduct', settings=settings)  # send the queue to rabbit
+
+            sendRabbit(msg,"D")
+    except:
+            pass
+    
+
     logger.writelog("Get_ComportForProduct",str(productId))
     authtoken = getauthtoken()
     host = settings['host']
@@ -297,8 +306,7 @@ def Get_ComportForProduct(settings, productId, amount, logger):
     logger.writelog("Get_ComportForProduct",str(response.text))
 
     return(response.text)
-
-    pass
+   
 
 def Update_Retry_RequestId(settings,requestId, value):
     
@@ -332,30 +340,39 @@ def Update_Retry_RequestId(settings,requestId, value):
 
 def Update_Retry_TransactionId(settings,transactionId, retry):
     
+    try:
+        msg = jsonMessage( 'C',f"{transactionId},{retry}", 'Update_Retry_TransactionId', settings=settings)  # send the queue to rabbit
+
+        sendRabbit(msg,"D")
+
+    except:
+        pass 
+     
     authtoken = getauthtoken()
 
     host = settings['host']
    
-    url = host + "/Remote/Update_Retry_TransactionId?transactionId=" + transactionId + "&retry=" + retry
+    url = host + "/Remote/Update_Retry_TransactionId?transactionId=" + str(transactionId) + "&retry=" + str(retry)
 
     payload = {}
     headers = {
     'Authorization': 'Bearer ' + authtoken
     }
 
-    response = requests.request("GET", url, headers=headers, data=payload)
+    response = requests.request("POST", url, headers=headers, data=payload)
     
     return(response.text)
 
-def Update_Process_failed(settings, message,deviceId, requestId):
+def Update_Process_failed(settings, message, requestId):
    
     try:
 
+        transaction = 'commit'
 
         authtoken = getauthtoken()
         
         host = settings['host']
-        url = host + "/Remote/Process_Failure?message=" + message + "&deviceId=" + deviceId +"&requestId=" + requestId
+        url = host + "/Remote/Process_Failure?message=" + str(message) + "&requestId=" + str(requestId) +"&transaction=" + str(transaction)
 
         payload = {}
         files={}
@@ -400,6 +417,7 @@ def AnyTransactions_ForAccount(settings):
         # msg = jsonMessage('C',f"{"Ping"}")  # send the queue to rabbit
 
         # sendRabbit("AnyTransactions_ForAccount",msg,"D", settings=settings)   
+
         try:
             msg = jsonMessage( 'C',f"Ping", 'AnyTransactions_ForAccount', settings=settings)  # send the queue to rabbit
 
@@ -411,7 +429,7 @@ def AnyTransactions_ForAccount(settings):
                 
         host = settings['host']
 
-        url = host + "/Remote/Remote/AnyTransactions_ForAccount?accountId=" + settings["accountId"]
+        url = host + "/Remote/AnyTransactions_ForAccount?accountId=" + settings["AccountId"]
 
         payload = {}
         headers = {
@@ -421,7 +439,9 @@ def AnyTransactions_ForAccount(settings):
 
         response = requests.request("GET", url, headers=headers, data=payload)
 
-        print(response.text)
+        #print(response.text)
+        return(response.text)
+    
     except Exception as ex:
         print(ex)
 

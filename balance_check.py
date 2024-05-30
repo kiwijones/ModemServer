@@ -209,7 +209,7 @@ class BC():
                     print(self.simPin)
  
             except Exception as ex:
-                 print('SimPin: ' + ex)
+                return
                  
             
             if(len(self.simPin) == ""):
@@ -256,7 +256,7 @@ class BC():
                             strPort.append(str(self.port[0]) + ',' + str(self.port[7]) + ','+ str(self.port[1]) + ',' + str(err) + ',' +  lastDate + "," + str(self.port[4])+ "," + str(self.port[5])+ ",True")
                             print(strPort)
                             # type BA is for balance array 
-                            msg = jsonMessage('BA',' '.join(map(str,sorted(strPort))))  # send the queue to rabbit
+                            #msg = jsonMessage('BA',' '.join(map(str,sorted(strPort))))  # send the queue to rabbit
                             #sendRabbit(msg,"D")  # D here is dashboard    
                             return strPort
                     else:
@@ -346,7 +346,7 @@ def Threadedbalance( modems):  # <-- modems is the modems.pickle... modems.json
 
             t = Thread(target=taskBalance,args=(que,logger,modem))
             
-            # print(t)
+            print(t)
             threads.append(t)
             t.start()
 
@@ -354,23 +354,25 @@ def Threadedbalance( modems):  # <-- modems is the modems.pickle... modems.json
         for t in threads:
             
             t.join()  # wait for all threads to complete
+            print(t)
         
-        active_zones = []
+        # active_zones = []
 
-        for q in que: 
+        # for q in que: 
+        #     print(q)
             
-            isZone =   q[0].split(',')[5]  
+        #     isZone =   q[0].split(',')[5]  
 
-            if isZone.isnumeric():
-                active_zones.append(int(isZone))
+        #     if isZone.isnumeric():
+        #         active_zones.append(int(isZone))
 
-            print(q)  # loop through the queue
+        #     print(q)  # loop through the queue
 
-        print(active_zones)
-        with open("C:/System/Data/active_zones.pck","wb") as data_file:
-            pickle.dump(active_zones,data_file)
+        # print(active_zones)
+        # with open("C:/System/Data/active_zones.pck","wb") as data_file:
+        #     pickle.dump(active_zones,data_file)
             
-        msg = jsonMessage('DW','|'.join(map(str,sorted(que))))  # send the queue to rabbit
+        #msg = jsonMessage('DW','|'.join(map(str,sorted(que))))  # send the queue to rabbit
         #sendRabbit(msg,"D")  # D here is dashboard
 
 if __name__ == "__main__":

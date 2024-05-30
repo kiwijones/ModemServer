@@ -245,22 +245,20 @@ def read_from_logger(serialPort, logger,settings, *args):
     slow_port_response_timeout = 3
 
 
+    # try:
+    #     with open("C:/System/Data/nocount_timeout.pck","rb") as data_file:
 
+    #         #print("found pickle timeout: " + str(noData_TimeOut))
 
-    try:
-        with open("C:/System/Data/nocount_timeout.pck","rb") as data_file:
+    #         noData_TimeOut = pickle.load(data_file)
+    #         try:
+    #             slow_port_response_timeout = pickle.load(data_file)
+    #         except:
+    #             pass
 
-            #print("found pickle timeout: " + str(noData_TimeOut))
-
-            noData_TimeOut = pickle.load(data_file)
-            try:
-                slow_port_response_timeout = pickle.load(data_file)
-            except:
-                pass
-
-    except Exception as ex:
-        print("No pickle", ex)
-        noData_TimeOut = 75
+    # except Exception as ex:
+    #     print("No pickle", ex)
+    #     noData_TimeOut = 75
 
     #print("noData_TimeOut",noData_TimeOut)
 
@@ -311,7 +309,7 @@ def read_from_logger(serialPort, logger,settings, *args):
                         print(f'*** Update_Retry_RequestId {noData_Count} ***')
 
                         Update_Retry_RequestId(settings,args[5],args[3])   
-                         
+
                     except Exception as ex:
                         print(ex)
                     
@@ -327,10 +325,10 @@ def read_from_logger(serialPort, logger,settings, *args):
 
                     writeLog = True  
                     for i in cmdFilter:
-                        print(i)
+                        #print(i)
                         if strResponse.rfind(i) > 0:
                             writeLog = False
-                            print(i)
+                            #print(i)
 
                    
                     #if writeLog:
@@ -359,9 +357,9 @@ def read_from_logger(serialPort, logger,settings, *args):
 
                         if strResponse.index('minimum') > -1:
   
-                            print("Not Good: ", strResponse)   
+                            print("Amount below minimum: ", strResponse)   
                                   
-                            return "-1," + strResponse
+                            return "-2," + strResponse
                             
                             # rabbitTransaction(f"Minimum {strResponse}",2)
 
@@ -382,11 +380,6 @@ def read_from_logger(serialPort, logger,settings, *args):
                         # we will do nothing
                         pass
                         #print('strResponse.index(minimum) > -1:' + ex)
-
-                    # print('string index',strResponse.index('HCSQ'))
-                    # print('$'*30)
-
-                    #print("222")
 
                     try:    
                         # if we have found what we need, for example Votre in string for balance 
@@ -409,8 +402,9 @@ def read_from_logger(serialPort, logger,settings, *args):
                         #print('strResponse.find("destinataire") > 0: ' + ex)
 
                     try:
-
+                        
                         if strResponse.find("Code Pin") > 0:
+                            print("incorrect code pin")
                             return "-4," + strResponse
                         pass     
                     except Exception as ex:
@@ -428,6 +422,7 @@ def read_from_logger(serialPort, logger,settings, *args):
                     try:
 
                         if strResponse.find("incorrect") > 0:
+                            print('')
                             return "-3," + strResponse
                         pass     
                     except Exception as ex:
@@ -437,6 +432,7 @@ def read_from_logger(serialPort, logger,settings, *args):
                     try:
 
                         if strResponse.find("bloqu") > 0:
+
                             return "-5," + strResponse
                         pass     
                     except Exception as ex:
@@ -566,18 +562,7 @@ def modem_at(port_to_send_to, *args):
 def modem_cusd_Logger(port_to_send_to, logger, settings, *args):  # *args here are the kwargs passed in
 
     
-    #print("modem_cusd_Logger(port_to_send_to, logger, settings, *args)")
-    #print('----- modem_cusd_Logger -----', port_to_send_to)
-    #print('----- modem_cusd_Logger -----', args)
-
-    # for i in args:
-    #     print(i)
-
-    #print(args[0])  # args passed in is a tuple within a tuble (('"*570*0000#",15', 'cusd', 'Votre', '1'),)
-
-
-    # print("*"*50)
-    
+        
     args = args[0]  # new args is the first tuple 
 
     #print(args) 
@@ -702,37 +687,5 @@ def modem_cusd(port_to_send_to, *args):
 
     
     return readResponse
-
-
-
-    print(cmd)
-    print(args)
-    print("*"*50)
-
-    
-    at_bytes = b'at+'
-
-    at_string = cmd + '\r'
-
-    atCommand = at_bytes + at_string.encode('utf-8')
-
-    print("comma",atCommand)
-
-    # print(port_to_send_to) 
-
-    port_to_send_to.write(atCommand)
-    
-    
-    readResponse = read_from(port_to_send_to,args[0])
-
-    print("readResponse", readResponse)
-
-    return readResponse
-
-    # x = threading.Thread(target=read_from, args=(port_to_send_to,'ser','isdigit'))
-
-    # x.start()
-    
-    pass
 
 

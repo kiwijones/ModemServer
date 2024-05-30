@@ -59,6 +59,8 @@ if __name__=='__main__':
     # except:
     #     pass
 
+    logger = Logging_File()  
+
     try:
 
         f = open("c:/System/Data/Modems.json", "r")
@@ -129,12 +131,12 @@ if __name__=='__main__':
 
         running_shelve = shelve.open(shelve_one, flag='w')  # open the shelf get the paused param
 
-        print(running_shelve.__dict__)
+        #print(running_shelve.__dict__)
 
         if not running_shelve['Paused']:
-            print(processCounter)
-            print(running_shelve['Balance'])
-            if processCounter % 5 == 0:
+            #print(processCounter)
+            #print(running_shelve['Balance'])
+            if processCounter % 10 == 0:
                 running_shelve['Balance'] = True
              
             if running_shelve['Balance']:
@@ -157,7 +159,15 @@ if __name__=='__main__':
                     print(settingsFile)
 
                 print('check for transactions')
-                NewTransactions(processCounter,logger=logger,settings=settingsFile,simulate=False)
+
+                transaction = NewTransactions(processCounter,logger=logger,settings=settingsFile,simulate=False)
+
+                returnCount = transaction.RunTransaction()
+
+                if(int(returnCount) > 0):
+                    running_shelve['Balance'] = True
+
+                print("Processed: " + str(returnCount)) 
                 
         
         # try:
