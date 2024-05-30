@@ -47,18 +47,6 @@ class SetPort():
 
 if __name__=='__main__':
 
-    # try:
-
-    #     f = open("c:/System/server_queue.json", "r")
-    #     data = json.loads(f.read())
-    #     f.close()
-    #     # print(data)
-    #     # print(data["server"])
-    #     with open("C:/System/Data/rabbit.pck","wb") as data_file:
-    #         pickle.dump(data["server"],data_file)
-    # except:
-    #     pass
-
     logger = Logging_File()  
 
     try:
@@ -125,6 +113,7 @@ if __name__=='__main__':
     # settings['Ports'] = True
     # settings.close()
 
+
     ScanThePorts(settings,0)
     
     while True:
@@ -153,14 +142,10 @@ if __name__=='__main__':
                     print(ex)
 
             else:
-                with open('C:/System/Data/settings.pck', 'rb') as file:
-                # Unpickle the data
-                    settingsFile = pickle.load(file)
-                    print(settingsFile)
+                
+                print(f'Looking for requests: {processCounter}')
 
-                print('check for transactions')
-
-                transaction = NewTransactions(processCounter,logger=logger,settings=settingsFile,simulate=False)
+                transaction = NewTransactions(processCounter,logger=logger,settings=settings,simulate=False)
 
                 returnCount = transaction.RunTransaction()
 
@@ -168,58 +153,9 @@ if __name__=='__main__':
                     running_shelve['Balance'] = True
 
                 print("Processed: " + str(returnCount)) 
-                
-        
-        # try:
-        #     msg = jsonMessage("C",f"({list(running_shelve.items())}) ")
-        #     sendRabbit(msg,"D")
-        # except Exception as ex:
-        #     print(ex)
-        
-        # print("Paused ", processCounter)
+      
+        time.sleep(60)
 
-
-
-        # if not running_shelve['Paused']:
-           
-        #     if processCounter % 5 == 0:    
-        #         # pass    
-        #         running_shelve['Balance'] = True
-                    
-        #     try:
-        #         if running_shelve['Ports']:
-        #             print("Run_PortScan")
-        #             ScanThePorts(running_shelve)
-        #         else:
-        #             print("No Ports")   
-        #     except Exception as ex:
-        #         print(ex)
-
-        #     try:
-        #         if running_shelve['Balance']:
-        #             print("Run_Balance")
-        #             BalanceCheck(running_shelve)
-        #         else:
-        #             print("No balance")
-        #     except Exception as ex:
-        #             print(ex)
-
-        #     logger = Logging_File()  
-        #     try:
-        #         NewTransactions(processCounter,logger=logger,settings=running_shelve,simulate=False)
-        #     except Exception as ex:
-                
-        #         print(ex)
-        #         print("NewTransactions")
-
-        # else:
-        #     msg = jsonMessage("C",f"({processCounter}) Modems Paused")
-        #     #sendRabbit(msg,"D")
-        #     print("Paused ", processCounter)
-           
-        # running_shelve.close()
-
-        time.sleep(30)
         processCounter -= 1
             
         # if processCounter < 1:

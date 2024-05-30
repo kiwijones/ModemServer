@@ -47,7 +47,6 @@ class ThreadRabbitReceive(Thread):
 def jsonMessage(type,message, function,settings):
     print("*"*45)
 
-
     # print(message)
   
     # ''' Default json format to send back to RabbitMQ'''
