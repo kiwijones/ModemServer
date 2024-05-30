@@ -2,6 +2,7 @@ import smtplib
 import pika
 import datetime
 from threading import Thread
+import threading
 import json
 from time import sleep
 from class_objects import Setting_File
@@ -36,13 +37,17 @@ class ThreadSendEmail(Thread):
 
 
 class ThreadRabbitReceive(Thread):
-    print(__name__)
-    print("ThreadRabbitReceive")
-    def __init__(self):
-        Thread.__init__(self)
-         
-    # def run(self):
-    #         receiveRabbit()
+    pass
+    
+
+    
+    #def run(self):
+    #       receiveRabbit()
+
+
+
+
+
 
 def jsonMessage(type,message, function,settings):
     print("*"*45)
@@ -97,8 +102,6 @@ def rabbitTransaction(message, action):
                                             '/',
                                             credentials)
 
-
-
         connection = pika.BlockingConnection(parameters)
 
         channel = connection.channel()
@@ -124,53 +127,53 @@ def rabbitTransaction(message, action):
 
             # print('!'*57)
 
-            settings = shelve.open("C:/System/Data/shelve_one.shlv",flag='w',writeback=True)
+            # settings = shelve.open("C:/System/Data/shelve_one.shlv",flag='w',writeback=True)
         
-            if strMsg.find("Port") > -1:
-                print("Port",strMsg)
-                # settings_file.write_setting_file(False,True)
-                settings['Ports'] = True
+            # if strMsg.find("Port") > -1:
+            #     print("Port",strMsg)
+            #     # settings_file.write_setting_file(False,True)
+            #     settings['Ports'] = True
 
-            if strMsg.find("Balance") > -1:
-                print("Balance",strMsg)
-                # settings_file.write_setting_file(True,False)
-                settings['Balance'] = True
+            # if strMsg.find("Balance") > -1:
+            #     print("Balance",strMsg)
+            #     # settings_file.write_setting_file(True,False)
+            #     settings['Balance'] = True
 
-            if strMsg.find("Run") > -1:
-                print("Pause",strMsg)
-                # settings_file.write_setting_file(True,False)
-                settings['Paused'] = True
+            # if strMsg.find("Run") > -1:
+            #     print("Pause",strMsg)
+            #     # settings_file.write_setting_file(True,False)
+            #     settings['Paused'] = True
 
-            if strMsg.find("Pause") > -1:
-                print("Pause",strMsg)
-                # settings_file.write_setting_file(True,False)
-                settings['Paused'] = False
+            # if strMsg.find("Pause") > -1:
+            #     print("Pause",strMsg)
+            #     # settings_file.write_setting_file(True,False)
+            #     settings['Paused'] = False
 
-            if strMsg.find("Toggle") > -1:
+            # if strMsg.find("Toggle") > -1:
 
 
-                splitter = strMsg.split('|')
+            #     splitter = strMsg.split('|')
 
-                print(splitter)
+            #     print(splitter)
                 
-                if splitter[1] == "On":
+            #     if splitter[1] == "On":
 
-                    print("Toggle On")
+            #         print("Toggle On")
                   
 
-                    settings["SinglePort"] = str(splitter[2])
+            #         settings["SinglePort"] = str(splitter[2])
 
-                    print(settings["SinglePort"])
+            #         print(settings["SinglePort"])
                    
-                else:
-                    print("Toggle off")
-                    settings["SinglePort"] = ""
+            #     else:
+            #         print("Toggle off")
+            #         settings["SinglePort"] = ""
 
 
 
 
-            settings.sync()
-            settings.close()
+            # settings.sync()
+            # settings.close()
 
             rabbitTransaction(f"Message received: {body.decode()}",2)
 
@@ -351,7 +354,8 @@ def sendRabbit(message, queue):
 if __name__ == "__main__":
 
     print("__main__")
-    #receiveRabbit()    
+    receive_thread = ThreadRabbitReceive()
+    receive_thread.start()
 
 
     # shelve_one = 'C:/System/Data/shelve_one.shlv'

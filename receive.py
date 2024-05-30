@@ -4,11 +4,11 @@ def main():
 
 
 
-    userName = "vend"
-    password = "YHgc7RLiNJaJVmx"
-    host = "vpn.etlie.com"
+    userName = "test1"
+    password = "H64M2wksSsPLcuy"
+    host = "92.51.204.82"
 
-    credentials = pika.PlainCredentials('modems', 'v5aWf74MrcDh4Tb')
+    credentials = pika.PlainCredentials(username=userName, password=password)
 
     parameters = pika.ConnectionParameters(host,
                                         5672,
@@ -21,13 +21,14 @@ def main():
 
     channel = connection.channel()
 
-    channel.queue_declare(queue='Storm-Modems')
+    channel.queue_declare(queue='stormReceive')
 
     def callback(ch, method, properties, body):
         
         print(" [x] Received %r" % body.decode())
+        
 
-    channel.basic_consume(queue='Storm-Modems', on_message_callback=callback, auto_ack=True)
+    channel.basic_consume(queue='stormReceive', on_message_callback=callback, auto_ack=True)
 
     # print(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()
