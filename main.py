@@ -108,17 +108,16 @@ if __name__=='__main__':
     bool_process_balance = True
     bool_reset_counter = False
 
-
     def callback(ch, method, properties, body):
 
         decoded =  body.decode()
         print(" [x] Received %r" % decoded)
-        
+
         if(decoded == "Get"):
             CheckForRequests()
             pass
 
-    
+    # rabbitMg consumer
     def start_consumer():
         #print(__name__)
         print("Thread Rabbit Receive")
@@ -163,12 +162,6 @@ if __name__=='__main__':
 
         print("Processed: " + str(returnCount)) 
         
-    # receive_thread = ThreadRabbitReceive()
-    # receive_thread.start()
-
-    # settings = shelve.open("C:/System/Data/shelve_one.shlv",flag='w',writeback=True)
-    # settings['Ports'] = True
-    # settings.close()
 
     ScanThePorts(settings,0)
     
@@ -210,8 +203,7 @@ if __name__=='__main__':
                 CheckForRequests()
 
                 
-      
-        time.sleep(60)
+        time.sleep(240)
 
         processCounter -= 1
             

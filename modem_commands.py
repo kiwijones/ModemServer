@@ -313,7 +313,7 @@ def read_from_logger(serialPort, logger,settings, *args):
                     except Exception as ex:
                         print(ex)
                     
-                    return "-1 No Response"
+                    return "-1, No Response"
 
 
                 if len(strResponse) > 0:
@@ -471,7 +471,7 @@ def read_from_logger(serialPort, logger,settings, *args):
 #args[2] == "WAITFOR"
                     if slow_port_response > 4: 
                         # will exit here, modem will responsd very quickly ... milli seconds not seconds
-                        return "-2 Slow Response"
+                        return "-1, Slow Response"
 
                 time.sleep(.1)  
 
@@ -479,7 +479,7 @@ def read_from_logger(serialPort, logger,settings, *args):
                            
             except Exception as ex:
                 print(ex)
-                return "-1 No Response " + ex
+                return "-1, No Response " + ex
 
 
 # @timer_decorator

@@ -15,7 +15,7 @@ import pickle,os
 import api_auth 
 import http.client
 import requests
-from api_auth import AnyTransactions_ForAccount,Update_Process_failed
+from api_auth import AnyTransactions_ForAccount,Update_Process_failed,Update_Process_Retry
 
 # @logger
 
@@ -52,8 +52,8 @@ def updateRetry(transactionId, retry,errorCodeFromApi, settings):
     else:    
         value = int(retry) + 1
 
-        if value > 3:
-            value = -1
+        # if value > int(settings["retry"]):
+        #     value = -1
 
     print(value)
 
@@ -218,7 +218,7 @@ returns TransactionResponse
     response_fail = []
     args = args[0]
 
-    #print(args)
+    print(args)
 
     #print(type(args))
 
@@ -231,6 +231,7 @@ returns TransactionResponse
     phoneNo = args['phoneNumber']
     requestId = args['requestId']
     retry = args['retry']
+    simTypeId = args['simTypeId']
 
 
     #print(args['productId'])
@@ -263,7 +264,7 @@ returns TransactionResponse
                 if(item['productId'] == str(productId)):
 
                     try:
-                        portResponse = api_auth.Get_ComportForProduct( settings,productId,args['amount'], logger=logger)
+                        portResponse = api_auth.Get_ComportForProduct( settings,productId,args['amount'],simTypeId, logger=logger)
                         
                         simpin = ""
                         for port in json.loads(portResponse):
@@ -274,7 +275,8 @@ returns TransactionResponse
                                 #imsi = port["IMSI"]
                                 transactionAt = port["transactionAt"]
                                 balanceAt = port["balanceAt"]
-                                print(str(comPort) + " " + str(simPin))
+                                simTypeId = port["simTypeId"]
+                                print(str(comPort) + " " + str(simPin) + " " + str(simTypeId))
                                 
                                 # if we have a port with enough balance then break out
                                 if(int(currentBalance) >= int(args['amount'])):
@@ -497,27 +499,7 @@ returns TransactionResponse
 
             simulate = '1'
 
-            # confirm with "1"
-
-            # try:
-            #     with open("C:/System/Data/com_file.pck","rb") as com_file:
-            #         comPort = pickle.load(com_file)
-                
-            # except:
-                
-            #     pass
-            
-            # send the confirm to the network by sending the 1 
-
-            # response here is split on space
-            #response = str(run_balance(ser,logger, settings,'"1",15','cusd','succes',simulate,1,str(comPort))).split()
-
-            #rabbitTransaction(f"Modem Response 2 {response}",1)
-
-            # result = logger.writelog("Process_transaction 1",f"Modem Response 2 {response}")
-            # msg = jsonMessage("C",result)
-            # sendRabbit(msg,"D")
-
+           
             index_count = 0
             current_credit = 0
             transactionid = 0
@@ -652,9 +634,27 @@ class Process_Failure:
         updateRetry(self.transactionId,self.retry,errorCodeFromApi, settings=self.settings)
 
     # @timer_decorator
-    def update_Transaction_qry_failed(self, message, logger):
+    def update_Transaction_qry_failed(self, message, retry,logger):
 
         print("update_Transaction_qry_failed".center(50,"*"))
+
+        print(self.requestid)
+       
+        print(message)
+        
+        message = string_remove_chars(message)
+    
+        try:
+             Update_Process_failed(self.settings,message=message,requestId=self.requestid,retry=retry)   
+
+        except Exception as ex:
+             print('Remote/Process_Failure: ' + ex)
+       
+        return
+    
+    def update_Transaction_qry_retry(self, message, logger):
+
+        print("update_Transaction_qry_retry".center(50,"*"))
 
         print(self.requestid)
        
@@ -663,44 +663,12 @@ class Process_Failure:
 
         message = string_remove_chars(message)
 
-        # strip out some junk we don't need
-        # textToReplace = ["(",")",",","'"]
-
-        # try:
-        #     #newMessage = str(message)
-        #     for tr in textToReplace:
-        #         message = str(message).replace(tr,"") 
-
-
-        #     print(message)
-
-        # except Exception as ex:
-        #     print(ex)
-      
+    
         try:
 
 
-             Update_Process_failed(self.settings,message=message,requestId=self.requestid)   
+             Update_Process_Retry(self.settings,message=message,requestId=self.requestid)   
 
-
-        #     host = data['host']
-        #     url = host + f"/Remote/Process_Failure?message={message}&requestId={self.requestid}&transaction={self.transaction}"
-
-        #     # "http://remote.retailpay.io/Remote/Process_Failure?message=('ro incorrect',)&requestId=6122"
-        #     aadAuth = api_auth.getauthtoken()
-        #     print(aadAuth)
-        #     print(url)
-        #     conn = http.client.HTTPConnection("remote.retailpay.io")
-        #     payload = ''
-        
-        #     headers = {
-        #         'Content-Type': 'application/json',
-        #         'Authorization': 'Bearer ' + aadAuth
-        #     }
-
-        #     response = requests.request("POST", url, headers=headers, data=payload)
-
-        #     print(response.status_code)
 
         except Exception as ex:
              print('Remote/Process_Failure: ' + ex)
@@ -772,84 +740,6 @@ class Process_Success():
             print(ex)
 
 
-
-
-
-
-        # result = logger.writelog("Process_transaction 12",f"process Transaction {self.requestid}")
-        # msg = jsonMessage("C",result)
-        # #sendRabbit(msg,"D")
-
-        # query = ''   
-
-        # # setting nocount seems
-        # # added 15/04/2023
-        # # if we get a success from the netork then set the retry value to -1
-        # # this should prevent the transaqction from being called again if the below fails
-        # try:    
-        #     updateRetry_Request(self.requestid,4)
-        # except Exception as ex:
-        #     print(ex)
-
-
-        # try:
-        #     query = "set nocount on; exec bluechip.dbo.sp_PLATFORM_StormPaymentV2 "  + str(self.requestid) + ",1,'" + self.transactionid + "'," + str(self.processmode)
-            
-        #     result = logger.writelog("Process_transaction 11",f"process Transaction: {query}")
-        #     msg = jsonMessage("C",result)
-        #     #sendRabbit(msg,"D")
-
-
-
-        # except Exception as ex:
-
-        #     result = logger.writelog("Process_transaction",f"{ex}")
-        #     msg = jsonMessage("C",result)
-        #     #sendRabbit(msg,"D")
-
-        #     print(ex)
-
-        orderNumber = "0"
-
-
-        return
-        #print(query)
-        try:
-
-
-            # row = int(self.cursor.execute(sp_qry).fetchone()[0])
-
-            engine = mssql_engine()
-
-            conn1 = engine.raw_connection()
-
-            cursor = conn1.cursor()
-
-            result = cursor.execute(query).fetchall()
-
-
-            cursor.commit()
-      
-            cursor.close
-            del cursor
-
-            print(result)
-
-            for r in result:
-                
-                self.__orderid = int(r[0])
-                self.stocktransactionId = int(r[1])
-                print(f"__orderid {self.__orderid } __stockTransactionId {self.stocktransactionId}")
-                
-                
-            result = logger.writelog("Process_transaction 10",f"process Transaction: Order Number {self.__orderid}, Stock TransactionId {self.stocktransactionId}")
-
-            msg = jsonMessage("C",result)
-            #sendRabbit(msg,"D")
-           
-        except  Exception as e:
-            print(e)
-
 class NewTransactions():
 
     '''this will query for database for any outstanding transactions'''
@@ -860,11 +750,6 @@ class NewTransactions():
         self.logger = logger
         self.settings = settings
         
-        
-
-        # print(data)
-
-        # parts = data.decode("utf-8").split(',')
         
     def RunTransaction(self): 
 
@@ -891,8 +776,10 @@ class NewTransactions():
             requestId = dataRow['requestId']
             retry = dataRow['retry']
             transactionId  = dataRow["transactionID"]
+            simTypeId = dataRow["simTypeId"]
+            
 
-            print( str(phoneNo) + " " + str(amount) + " " + str(requestId) + " " + str(retry))
+            print( str(phoneNo) + " " + str(amount) + " " + str(requestId) + " " + str(retry) + " " + str(simTypeId))
             
             try:
 
@@ -925,18 +812,20 @@ class NewTransactions():
 
                 print(f'--- transaction done  {transaction_ErrorCode} ---')
                 
-
                 if(transaction_ErrorCode < 0):
                     print("failed")
 
     
                     fail_message =  string_remove_chars(str(transaction_result.message1)  + str(transaction_result.message2)  + str(transaction_result.message3) + str(transaction_result.message4))
                     
-                    fail = Process_Failure(requestId,transactionId,0,self.settings,"rollback")  # 
+                    fail = Process_Failure(requestId,transactionId,retry,self.settings,"rollback")  # 
                 
                     fail.incRetry(transaction_ErrorCode)
-
-                    fail.update_Transaction_qry_failed(fail_message,logger)
+                
+                    if(transaction_ErrorCode > -1):
+                        fail.update_Transaction_qry_failed(fail_message,logger)
+                    else:
+                        fail.update_Transaction_qry_retry(fail_message,logger)
 
                     print(transaction_result.errorCode)
 
@@ -977,7 +866,6 @@ class NewTransactions():
         return(returnCount)    
             
 
-        
 
 @Sendmail_Decorator_2
 class ProcessException(Exception):

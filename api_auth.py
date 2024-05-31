@@ -180,7 +180,6 @@ def SendLastSeen(accountId,comPort,isActive,imei, balance):
             
             print(ex)
             return
-    
 
 def ModemStartup(accountId,comPort,isActive,imsi,imei,  balance, server, simType, simPin, settings ):
 
@@ -276,23 +275,22 @@ def GetComportForIMEI(imei, settings, logger):
 
     return(response.text)
 
-def Get_ComportForProduct(settings, productId, amount, logger):
+def Get_ComportForProduct(settings, productId, amount, simTypeId, logger):
 
         
     try:
-            msg = jsonMessage( 'C',f"{productId},{amount}", 'Get_ComportForProduct', settings=settings)  # send the queue to rabbit
+            msg = jsonMessage( 'C',f"{productId},{amount},{simTypeId}", 'Get_ComportForProduct', settings=settings)  # send the queue to rabbit
 
             sendRabbit(msg,"D")
     except:
             pass
     
-
     logger.writelog("Get_ComportForProduct",str(productId))
     authtoken = getauthtoken()
     host = settings['host']
     accountId = settings['AccountId']
 
-    url = host + f"/Remote/Get_ComportForProduct?accountId={accountId}&productId={productId}&amount={amount}"
+    url = host + f"/Remote/Get_ComportForProduct?accountId={accountId}&productId={productId}&amount={amount}&simTypeId={simTypeId}"
 
     payload = {}
     headers = {
@@ -301,13 +299,12 @@ def Get_ComportForProduct(settings, productId, amount, logger):
 
     response = requests.request("GET", url, headers=headers, data=payload)
 
-    #print(response.text)
+    print(response.status_code)
 
     logger.writelog("Get_ComportForProduct",str(response.text))
 
     return(response.text)
    
-
 def Update_Retry_RequestId(settings,requestId, value):
     
     try:
@@ -363,7 +360,7 @@ def Update_Retry_TransactionId(settings,transactionId, retry):
     
     return(response.text)
 
-def Update_Process_failed(settings, message, requestId):
+def Update_Process_failed(settings, message, requestId, retry):
    
     try:
 
@@ -373,6 +370,29 @@ def Update_Process_failed(settings, message, requestId):
         
         host = settings['host']
         url = host + "/Remote/Process_Failure?message=" + str(message) + "&requestId=" + str(requestId) +"&transaction=" + str(transaction)
+
+        payload = {}
+        files={}
+        headers = {
+        'Authorization': 'Bearer ' + authtoken
+        }
+
+        response = requests.request("POST", url, headers=headers, data=payload, files=files)
+
+        print(response.text)
+    except Exception as ex:
+        print(ex)
+
+def Update_Process_Retry(settings, message, requestId):
+   
+    try:
+
+        transaction = 'commit'
+
+        authtoken = getauthtoken()
+        
+        host = settings['host']
+        url = host + "/Remote/Process_Retry?message=" + str(message) + "&requestId=" + str(requestId) +"&transaction=" + str(transaction)
 
         payload = {}
         files={}
@@ -429,17 +449,16 @@ def AnyTransactions_ForAccount(settings):
                 
         host = settings['host']
 
-        url = host + "/Remote/AnyTransactions_ForAccount?accountId=" + settings["AccountId"]
+        url = host + "/Remote/AnyTransactions_ForAccount?accountId=" + str(settings["AccountId"]) + "&retry=" + str(settings["retry"])
 
         payload = {}
         headers = {
         'Authorization': 'Bearer ' + authtoken
         }
 
-
         response = requests.request("GET", url, headers=headers, data=payload)
 
-        #print(response.text)
+        print(response.status_code)
         return(response.text)
     
     except Exception as ex:
